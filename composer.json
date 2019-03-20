@@ -1,0 +1,17 @@
+{
+  "name": "pulledbits/bootstrap",
+  "description": "Bootstrap class for loading resources",
+  "license": "MIT",
+  "type": "library",
+  "require": {
+    "php": ">=7.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~6"
+  },
+  "autoload": {
+    "psr-4": {
+      "pulledbits\\Bootstrap\\": "src"
+    }
+  }
+}
