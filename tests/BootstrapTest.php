@@ -5,15 +5,31 @@ namespace pulledbits\Bootstrap;
 
 class BootstrapTest extends \PHPUnit\Framework\TestCase
 {
+    protected function setUp()
+    {
+        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php');
+        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php');
+        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php');
+    }
+
 
     public function testConfig_DefaultOption()
     {
-        $file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php';
-        file_put_contents($file, '<?php return ["SECTION" => ["option" => "value"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option" => "value"]];');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
         $this->assertEquals('value', $object->config('SECTION')['option']);
+    }
+
+    public function testConfig_CustomOption()
+    {
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option" => "value"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["SECTION" => ["option" => "custom"]];');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        $this->assertEquals('custom', $object->config('SECTION')['option']);
     }
 
     public function testResource()
@@ -24,6 +40,19 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
 
         $object = new Bootstrap(sys_get_temp_dir());
 
+        $this->assertEquals('Yes!', $object->resource('resource'));
+    }
+
+    public function testResourceCache()
+    {
+        $file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php';
+        file_put_contents($file, '<?php return ["BOOTSTRAP" => ["path" => __DIR__]];');
+        file_put_contents(dirname($file) . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\pulledbits\\Bootstrap\\Bootstrap $bootstrap) { return "Yes!"; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+        $this->assertEquals('Yes!', $object->resource('resource'));
+
+        file_put_contents(dirname($file) . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\pulledbits\\Bootstrap\\Bootstrap $bootstrap) { return "No!"; };');
         $this->assertEquals('Yes!', $object->resource('resource'));
 
     }
