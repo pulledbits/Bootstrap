@@ -11,6 +11,11 @@ final class Bootstrap
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
+        if (array_key_exists('preload', $this->config('BOOTSTRAP'))) {
+            foreach ($this->config('BOOTSTRAP')['preload'] as $preloadAsset) {
+                $this->resource($preloadAsset);
+            }
+        }
     }
 
     public function resource(string $resource)
@@ -29,6 +34,9 @@ final class Bootstrap
             if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . 'config.php')) {
                 $this->config = array_merge($this->config, (include $this->configurationPath . DIRECTORY_SEPARATOR . 'config.php'));
             }
+        }
+        if (array_key_exists($section, $this->config) === false) {
+            return [];
         }
         return $this->config[$section];
     }
