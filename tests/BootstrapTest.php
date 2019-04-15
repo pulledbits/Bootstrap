@@ -2,7 +2,6 @@
 
 namespace pulledbits\Bootstrap;
 
-
 class BootstrapTest extends \PHPUnit\Framework\TestCase
 {
     protected function setUp()
@@ -38,8 +37,18 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
         file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["SECTION" => ["option" => "custom"]];');
 
         $object = new Bootstrap(sys_get_temp_dir());
-
         $this->assertEquals('custom', $object->config('SECTION')['option']);
+    }
+
+
+    public function testConfig_CustomOption_RecursiveMerge()
+    {
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option1" => "value"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["SECTION" => ["option2" => "custom"]];');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        $this->assertEquals('value', $object->config('SECTION')['option1']);
     }
 
     public function testResource()
