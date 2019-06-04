@@ -55,11 +55,6 @@ final class Bootstrap
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
-        if (array_key_exists('preload', $this->config('BOOTSTRAP'))) {
-            foreach ($this->config('BOOTSTRAP')['preload'] as $preloadAsset) {
-                $this->resource($preloadAsset);
-            }
-        }
     }
 
     public function resource(string $resource)

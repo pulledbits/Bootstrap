@@ -21,16 +21,6 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('value', $object->config('SECTION')['option']);
     }
 
-    public function testConfig_PreloadAssets()
-    {
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__, "preload" => ["resource"]]];');
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\pulledbits\\Bootstrap\\Bootstrap $bootstrap) { return "Yes!"; };');
-
-        $object = new Bootstrap(sys_get_temp_dir());
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\pulledbits\\Bootstrap\\Bootstrap $bootstrap) { return "No!"; };');
-        $this->assertEquals('Yes!', $object->resource('resource'));
-    }
-
     public function testConfig_CustomOption()
     {
         file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option" => "value"]];');
