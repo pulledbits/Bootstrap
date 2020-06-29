@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
 namespace rikmeijer\Bootstrap;
+
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
  * keys to arrays rather than overwriting the value in the first array with the duplicate
@@ -26,18 +27,14 @@ namespace rikmeijer\Bootstrap;
  * @author Daniel <daniel (at) danielsmedegaardbuus (dot) dk>
  * @author Gabriel Sobrinho <gabriel (dot) sobrinho (at) gmail (dot) com>
  */
-function array_merge_recursive_distinct ( array $array1, array $array2 ) : array
+function array_merge_recursive_distinct(array $array1, array $array2): array
 {
     $merged = $array1;
 
-    foreach ( $array2 as $key => &$value )
-    {
-        if ( is_array ( $value ) && isset ( $merged [$key] ) && is_array ( $merged [$key] ) )
-        {
-            $merged [$key] = array_merge_recursive_distinct ( $merged [$key], $value );
-        }
-        else
-        {
+    foreach ($array2 as $key => &$value) {
+        if (is_array($value) && isset ($merged [$key]) && is_array($merged [$key])) {
+            $merged [$key] = array_merge_recursive_distinct($merged [$key], $value);
+        } else {
             $merged [$key] = $value;
         }
     }
@@ -57,7 +54,7 @@ final class Bootstrap
         $this->configurationPath = $configurationPath;
     }
 
-    public function resource(string $resource) : object
+    public function resource(string $resource): object
     {
         if (array_key_exists($resource, $this->resources)) {
             return $this->resources[$resource];
@@ -72,14 +69,6 @@ final class Bootstrap
         return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this, $this->config($resource));
     }
 
-    private function openConfig(string $configID) : array {
-        if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php') === false) {
-            return [];
-        }
-        $config = (include $this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php');
-        return is_array($config) ? $config : [];
-    }
-
     public function config(string $section): array
     {
         if (isset($this->config) === false) {
@@ -89,5 +78,14 @@ final class Bootstrap
             return [];
         }
         return $this->config[$section];
+    }
+
+    private function openConfig(string $configID): array
+    {
+        if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php') === false) {
+            return [];
+        }
+        $config = (include $this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php');
+        return is_array($config) ? $config : [];
     }
 }
