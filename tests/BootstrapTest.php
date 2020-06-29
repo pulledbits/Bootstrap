@@ -45,8 +45,8 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["option" => $value]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createConfig('config.default', ["resource" => ["option" => $value]]);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
@@ -57,9 +57,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["option" => $value]]);
-        $this->createConfig('config', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["option" => $value]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createConfig('config.default', ["resource" => ["option" => $value]]);
+        $this->createConfig('config', ["resource" => ["option" => $value]]);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
         $this->assertEquals($value, $object->resource('resource')->option);
@@ -69,9 +69,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["option1" => $value]]);
-        $this->createConfig('config', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["option2" => "custom"]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option1"]]; };');
+        $this->createConfig('config.default', ["resource" => ["option1" => $value]]);
+        $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option1"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
@@ -80,8 +80,8 @@ final class BootstrapTest extends TestCase
 
     public function testResource() : void
     {
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap']]);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
@@ -105,8 +105,8 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()], "resource" => ["status" => $value]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["status" => $configuration["status"]]; };');
+        $this->createConfig('config.default', ["resource" => ["status" => $value]]);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["status" => $configuration["status"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
@@ -115,13 +115,13 @@ final class BootstrapTest extends TestCase
 
     public function testResourceCache() : void
     {
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir()]]);
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createConfig('config.default', []);
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
         $this->assertEquals('Yes!', $object->resource('resource')->status);
 
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "No!"];};');
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "No!"];};');
         $this->assertEquals('Yes!', $object->resource('resource')->status);
 
     }
