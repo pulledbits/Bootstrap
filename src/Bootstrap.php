@@ -63,7 +63,7 @@ final class Bootstrap
             return $this->resources[$resource];
         }
         $path = $this->config('BOOTSTRAP')['path'];
-        return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this);
+        return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this, $this->config($resource));
     }
 
     public function config(string $section): array

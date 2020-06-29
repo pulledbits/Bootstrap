@@ -45,6 +45,18 @@ final class BootstrapTest extends TestCase
         $this->assertEquals('Yes!', $object->resource('resource')->status);
     }
 
+    public function testWhenConfigurationSectionMatchesResourcesName_ExpectConfigurationToBePassedToBootstrapper() : void
+    {
+        $value = uniqid('', true);
+
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__], "resource" => ["status" => "'.$value.'"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["status" => $configuration["status"]]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        $this->assertEquals($value, $object->resource('resource')->status);
+    }
+
     public function testResourceCache() : void
     {
         file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__]];');
