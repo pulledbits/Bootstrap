@@ -72,13 +72,18 @@ final class Bootstrap
         return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this, $this->config($resource));
     }
 
+    private function openConfig(string $configID) : array {
+        if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php') === false) {
+            return [];
+        }
+        $config = (include $this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php');
+        return is_array($config) ? $config : [];
+    }
+
     public function config(string $section): array
     {
         if (isset($this->config) === false) {
-            $this->config = (include $this->configurationPath . DIRECTORY_SEPARATOR . 'config.defaults.php');
-            if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . 'config.php')) {
-                $this->config = array_merge_recursive_distinct($this->config, (include $this->configurationPath . DIRECTORY_SEPARATOR . 'config.php'));
-            }
+            $this->config = array_merge_recursive_distinct($this->openConfig('config.defaults'), $this->openConfig('config'));
         }
         if (array_key_exists($section, $this->config) === false) {
             return [];
