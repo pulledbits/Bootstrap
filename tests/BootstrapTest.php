@@ -9,30 +9,39 @@ final class BootstrapTest extends TestCase
 {
     public function testConfig_DefaultOption() : void
     {
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option" => "value"]];');
+        $value = uniqid('', true);
+
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__], "resource" => ["option" => "'.$value.'"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals('value', $object->config('SECTION')['option']);
+        $this->assertEquals($value, $object->resource('resource')->option);
     }
 
     public function testConfig_CustomOption() : void
     {
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option" => "value"]];');
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["SECTION" => ["option" => "custom"]];');
+        $value = uniqid('', true);
+
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__], "resource" => ["option" => "value"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["resource" => ["option" => "'.$value.'"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
-        $this->assertEquals('custom', $object->config('SECTION')['option']);
+        $this->assertEquals($value, $object->resource('resource')->option);
     }
 
     public function testConfig_CustomOption_RecursiveMerge() : void
     {
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["SECTION" => ["option1" => "value"]];');
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["SECTION" => ["option2" => "custom"]];');
+        $value = uniqid('', true);
+
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__], "resource" => ["option1" => "'.$value.'"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', '<?php return ["resource" => ["option2" => "custom"]];');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option1"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals('value', $object->config('SECTION')['option1']);
+        $this->assertEquals($value, $object->resource('resource')->option);
     }
 
     public function testResource() : void
