@@ -62,12 +62,7 @@ final class Bootstrap
         if (array_key_exists($resource, $this->resources)) {
             return $this->resources[$resource];
         }
-        $configuration = $this->config('BOOTSTRAP');
-        if (array_key_exists('path', $configuration)) {
-            $path = $configuration['path'];
-        } else {
-            $path = __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap';
-        }
+        $path = $this->config('BOOTSTRAP')['path'];
 
         return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this, $this->config($resource));
     }
