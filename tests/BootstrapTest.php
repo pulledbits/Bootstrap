@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace rikmeijer\Bootstrap\tests;
 
@@ -38,23 +38,23 @@ final class BootstrapTest extends TestCase
     public function testResource() : void
     {
         file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__]];');
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return "Yes!"; };');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals('Yes!', $object->resource('resource'));
+        $this->assertEquals('Yes!', $object->resource('resource')->status);
     }
 
     public function testResourceCache() : void
     {
         file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', '<?php return ["BOOTSTRAP" => ["path" => __DIR__]];');
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return "Yes!"; };');
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
-        $this->assertEquals('Yes!', $object->resource('resource'));
+        $this->assertEquals('Yes!', $object->resource('resource')->status);
 
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return "No!"; };');
-        $this->assertEquals('Yes!', $object->resource('resource'));
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "No!"];};');
+        $this->assertEquals('Yes!', $object->resource('resource')->status);
 
     }
 

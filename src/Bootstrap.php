@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace rikmeijer\Bootstrap;
 /**
@@ -26,7 +26,7 @@ namespace rikmeijer\Bootstrap;
  * @author Daniel <daniel (at) danielsmedegaardbuus (dot) dk>
  * @author Gabriel Sobrinho <gabriel (dot) sobrinho (at) gmail (dot) com>
  */
-function array_merge_recursive_distinct ( array $array1, array $array2 )
+function array_merge_recursive_distinct ( array $array1, array $array2 ) : array
 {
     $merged = $array1;
 
@@ -48,16 +48,16 @@ function array_merge_recursive_distinct ( array $array1, array $array2 )
 
 final class Bootstrap
 {
-    private $configurationPath;
-    private $resources = [];
-    private $config;
+    private string $configurationPath;
+    private array $resources = [];
+    private array $config;
 
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
     }
 
-    public function resource(string $resource)
+    public function resource(string $resource) : object
     {
         if (array_key_exists($resource, $this->resources)) {
             return $this->resources[$resource];
