@@ -13,6 +13,10 @@ final class BootstrapTest extends TestCase
     {
         $this->streams['config.default'] = fopen(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.defaults.php', 'wb');
         $this->streams['config'] = fopen(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
+
+        if (is_dir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap') === false) {
+            mkdir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap');
+        }
     }
     protected function tearDown() : void
     {
@@ -23,10 +27,18 @@ final class BootstrapTest extends TestCase
         @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php');
 
         @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php');
+
+        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'resource.php');
+        @rmdir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap');
     }
 
     private function createConfig(string $streamID, array $config) : void {
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
+    }
+
+    private function createResource(string $resourceName, string $content) : void
+    {
+        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
     public function testConfig_DefaultOption() : void
@@ -80,19 +92,12 @@ final class BootstrapTest extends TestCase
     public function testWhenNoResourcePathIsConfigured_ExpectBootstrapDirectoryUnderConfigurationPathToBeUsed() : void
     {
         $this->createConfig('config.default', []);
-
-        if (is_dir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap') === false) {
-            mkdir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap');
-        }
-
-        file_put_contents(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'resource.php', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
         $this->assertEquals('Yes!', $object->resource('resource')->status);
 
-        unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'resource.php');
-        rmdir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap');
     }
 
 
