@@ -69,7 +69,7 @@ final class Bootstrap
         return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this, $this->config($resource));
     }
 
-    public function config(string $section): array
+    private function config(string $section): array
     {
         if (isset($this->config) === false) {
             $this->config = array_merge_recursive_distinct($this->openConfig('config.defaults'), $this->openConfig('config'));
