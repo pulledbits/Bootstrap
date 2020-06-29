@@ -18,6 +18,9 @@ return new Bootstrap(__DIR__);
 ```php
 <?php
 return [
+    'LOGGER' => [
+        'channel' => 'MyApp'
+    ],
     'BOOTSTRAP' => [
         'path' => __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap'
     ]
@@ -31,7 +34,7 @@ return [
 use Psr\Log\LoggerInterface;
 
 return function (\rikmeijer\Bootstrap\Bootstrap $bootstrap) : LoggerInterface {
-    $logger = new Monolog\Logger("rikmeijer/Bootstrap");
+    $logger = new Monolog\Logger($bootstrap->config('LOGGER')['channel']);
     $logger->pushHandler(new \Monolog\Handler\SyslogHandler("debug"));
     return $logger;
 };
