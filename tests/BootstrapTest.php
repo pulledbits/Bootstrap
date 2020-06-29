@@ -44,13 +44,16 @@ final class BootstrapTest extends TestCase
     public function testConfig_DefaultOption() : void
     {
         $value = uniqid('', true);
-
         $this->createConfig('config.default', ["resource" => ["option" => $value]]);
+        fclose($this->streams['config']);
+        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php');
         $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
+        // Act
         $object = new Bootstrap(sys_get_temp_dir());
-
         $this->assertEquals($value, $object->resource('resource')->option);
+
+        $this->streams['config'] = fopen(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
 
     public function testConfig_CustomOption() : void
