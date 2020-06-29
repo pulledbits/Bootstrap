@@ -32,12 +32,44 @@
       <path value="$PROJECT_DIR$/vendor/sebastian/code-unit-reverse-lookup" />
       <path value="$PROJECT_DIR$/vendor/sebastian/resource-operations" />
       <path value="$PROJECT_DIR$/vendor/sebastian/object-enumerator" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpdocumentor/type-resolver" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpdocumentor/reflection-docblock" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpdocumentor/reflection-common" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phar-io/version" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phar-io/manifest" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/myclabs/deep-copy" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/doctrine/instantiator" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/composer" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/code-unit" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/type" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/webmozart/assert" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/theseer/tokenizer" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/version" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/resource-operations" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/recursion-context" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/object-reflector" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/object-enumerator" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/global-state" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/exporter" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/environment" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/diff" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/comparator" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/phpunit" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-timer" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-file-iterator" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-code-coverage" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpspec/prophecy" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-text-template" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-invoker" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/sebastian/code-unit-reverse-lookup" />
+      <path value="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/phpunit/php-token-stream" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="7.4" />
   <component name="PhpUnit">
     <phpunit_settings>
-      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/vendor/autoload.php" phpunit_phar_path="$PROJECT_DIR$/vendor/bin/phpunit" />
+      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/../../rikmeijer/Bootstrap/vendor/autoload.php" phpunit_phar_path="$PROJECT_DIR$/vendor/bin/phpunit" />
     </phpunit_settings>
   </component>
 </project>
