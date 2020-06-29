@@ -11,30 +11,30 @@ use rikmeijer\Bootstrap\Bootstrap;
 
 // include composer autoloader
 require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-return new Bootstrap(__DIR__);
+return new Bootstrap(__DIR__); // argument is configuration-path
 ```
 
-/config.defaults.php (/config.php is similar but can be gitignored and used for sensitive data)
+Default configuration options: /config.defaults.php (/config.php is similar but can be gitignored and used for sensitive data)
 ```php
 <?php
 return [
-    'LOGGER' => [
+    'logger' => [ // must be same as basename of resource loader
         'channel' => 'MyApp'
     ],
     'BOOTSTRAP' => [
-        'path' => __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap'
+        'path' => __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap' // optional: default is directory bootstrap under configuration-path
     ]
 ];
 ```
 
-/bootstrap/logger.php
+Resource loader: /bootstrap/logger.php
 ```php
 <?php
 
 use Psr\Log\LoggerInterface;
 
-return function (\rikmeijer\Bootstrap\Bootstrap $bootstrap) : LoggerInterface {
-    $logger = new Monolog\Logger($bootstrap->config('LOGGER')['channel']);
+return function (\rikmeijer\Bootstrap\Bootstrap $bootstrap , array $configuration) : LoggerInterface {
+    $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new \Monolog\Handler\SyslogHandler("debug"));
     return $logger;
 };
