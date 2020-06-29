@@ -1,6 +1,6 @@
 <?php
 
-namespace pulledbits\Bootstrap;
+namespace rikmeijer\Bootstrap;
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
  * keys to arrays rather than overwriting the value in the first array with the duplicate
