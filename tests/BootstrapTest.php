@@ -15,11 +15,11 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', ["resource" => ["option" => $value]]);
         fclose($this->streams['config']);
         @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php');
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource', '<?php return function(array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         // Act
         $object = new Bootstrap(sys_get_temp_dir());
-        $this->assertEquals($value, $object->resource('resource')->option);
+        self::assertEquals($value, $object->resource('resource')->option);
 
         $this->streams['config'] = fopen(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
@@ -40,10 +40,10 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config.default', ["resource" => ["option" => $value]]);
         $this->createConfig('config', ["resource" => ["option" => $value]]);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource', '<?php return function(array $configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
-        $this->assertEquals($value, $object->resource('resource')->option);
+        self::assertEquals($value, $object->resource('resource')->option);
     }
 
     public function testConfig_CustomOption_RecursiveMerge(): void
@@ -52,31 +52,31 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config.default', ["resource" => ["option1" => $value]]);
         $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["option" => $configuration["option1"]]; };');
+        $this->createResource('resource', '<?php return function(array $configuration) { return (object)["option" => $configuration["option1"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals($value, $object->resource('resource')->option);
+        self::assertEquals($value, $object->resource('resource')->option);
     }
 
     public function testResource(): void
     {
         $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap']]);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals('Yes!', $object->resource('resource')->status);
+        self::assertEquals('Yes!', $object->resource('resource')->status);
     }
 
     public function testWhenNoResourcePathIsConfigured_ExpectBootstrapDirectoryUnderConfigurationPathToBeUsed(): void
     {
         $this->createConfig('config.default', []);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals('Yes!', $object->resource('resource')->status);
+        self::assertEquals('Yes!', $object->resource('resource')->status);
 
     }
 
@@ -85,23 +85,23 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config.default', ["resource" => ["status" => $value]]);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap, array $configuration) { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('resource', '<?php return function(array $configuration) { return (object)["status" => $configuration["status"]]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
-        $this->assertEquals($value, $object->resource('resource')->status);
+        self::assertEquals($value, $object->resource('resource')->status);
     }
 
     public function testResourceCache(): void
     {
         $this->createConfig('config.default', []);
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
-        $this->assertEquals('Yes!', $object->resource('resource')->status);
+        self::assertEquals('Yes!', $object->resource('resource')->status);
 
-        $this->createResource('resource', '<?php return function(\\rikmeijer\\Bootstrap\\Bootstrap $bootstrap) { return (object)["status" => "No!"];};');
-        $this->assertEquals('Yes!', $object->resource('resource')->status);
+        $this->createResource('resource', '<?php return function($bootstrap) { return (object)["status" => "No!"];};');
+        self::assertEquals('Yes!', $object->resource('resource')->status);
 
     }
 
