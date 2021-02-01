@@ -69,6 +69,32 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $object->resource('resource')->status);
     }
 
+    public function testResourceDependingOfOtherResource(): void
+    {
+
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap'], 'resource' => ['result' => 'Yes!']]);
+        $this->createResource('resource', '<?php return function(array $configuration) { return (object)["status" => $configuration["result"]]; };');
+        $this->createResource('resource2', '<?php return function(array $configuration) { return (object)["status2" => $this->resource("resource")->status]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        self::assertEquals('Yes!', $object->resource('resource2')->status2);
+    }
+
+    public function testResourceHasNoAccessToOtherConfig(): void
+    {
+
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap'], 'resource3' => ['result' => 'Yes!']]);
+        $this->createResource('resource3', '<?php return function(array $configuration) { return (object)["status" => $configuration["result"]]; };');
+        $this->createResource('resource4', '<?php return function(array $configuration) { return (object)["status2" => $this->config("resource3")["result"]]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        $this->expectErrorMessage('Call to undefined method class@anonymous::config()');
+        $object->resource('resource4')->status2;
+    }
+
+
     public function testWhenNoResourcePathIsConfigured_ExpectBootstrapDirectoryUnderConfigurationPathToBeUsed(): void
     {
         $this->createConfig('config.default', []);

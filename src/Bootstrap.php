@@ -2,6 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
+use Closure;
+
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
  * keys to arrays rather than overwriting the value in the first array with the duplicate
@@ -66,13 +68,30 @@ final class Bootstrap
             $path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
         }
 
-        return $this->resources[$resource] = (require $path . DIRECTORY_SEPARATOR . $resource . '.php')($this->config($resource));
+        return $this->resources[$resource] = $this->openResource($path . DIRECTORY_SEPARATOR . $resource . '.php')($this->config($resource));
+    }
+
+    private function openResource(string $path): Closure
+    {
+        return (require $path)->bindTo(new class($this) {
+            private Bootstrap $bootstrap;
+
+            public function __construct(Bootstrap $bootstrap)
+            {
+                $this->bootstrap = $bootstrap;
+            }
+
+            final public function resource(string $resource): object
+            {
+                return $this->bootstrap->resource($resource);
+            }
+        });
     }
 
     private function config(string $section): array
     {
         if (isset($this->config) === false) {
-            $this->config = array_merge_recursive_distinct($this->openConfig('config.defaults'), $this->openConfig('config'));
+            $this->config = array_merge_recursive_distinct($this->openConfigDefaults(), $this->openConfigLocal());
         }
         if (array_key_exists($section, $this->config) === false) {
             return [];
@@ -80,12 +99,22 @@ final class Bootstrap
         return $this->config[$section];
     }
 
-    private function openConfig(string $configID): array
+    private function openConfigDefaults(): array
     {
-        if (file_exists($this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php') === false) {
+        return $this->openConfig($this->configurationPath . DIRECTORY_SEPARATOR . 'config.defaults.php');
+    }
+
+    private function openConfigLocal(): array
+    {
+        return $this->openConfig($this->configurationPath . DIRECTORY_SEPARATOR . 'config.php');
+    }
+
+    private function openConfig(string $path): array
+    {
+        if (file_exists($path) === false) {
             return [];
         }
-        $config = (include $this->configurationPath . DIRECTORY_SEPARATOR . $configID . '.php');
+        $config = (include $path);
         return is_array($config) ? $config : [];
     }
 }
