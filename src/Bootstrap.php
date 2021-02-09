@@ -102,6 +102,7 @@ final class Bootstrap
         return $path . DIRECTORY_SEPARATOR . $identifier . '.php';
     }
 
+    /** @deprecated use DependencyAttribute instead */
     private function openResource(string $identifier): Closure
     {
 

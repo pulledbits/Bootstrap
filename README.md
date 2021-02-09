@@ -28,22 +28,41 @@ return [
 ```
 
 Resource loader: /bootstrap/logger.php
+
 ```php
 <?php
 
-use Psr\Log\LoggerInterface;
+use Monolog\Handler\SyslogHandler;use Psr\Log\LoggerInterface;
 
-return function (\rikmeijer\Bootstrap\Bootstrap $bootstrap , array $configuration) : LoggerInterface {
+return function (array $configuration) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
-    $logger->pushHandler(new \Monolog\Handler\SyslogHandler("debug"));
+    $logger->pushHandler(new SyslogHandler("debug"));
     return $logger;
 };
 ```
 
+Other resource dependant of the logger resource, dependencies are automatically injected based on given (named)
+attributes
+
+```php
+<?php
+
+use Psr\Log\LoggerInterface;
+use \rikmeijer\Bootstrap\Dependency;
+
+return 
+#[Dependency(loggerParameter: "logger")]
+function (array $configuration, LoggerInterface $loggerParameter) : LoggerInterface {
+    $loggerParameter->emergency("Houston, we have a problem.");
+};
+
+```
+
 /someother/file.php
+
 ```php
 <?php
 
 $bootstrap = require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
-$router = $bootstrap->resource('logger');
+$logger = $bootstrap->resource('logger');
 ```
