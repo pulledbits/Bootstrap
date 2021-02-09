@@ -70,16 +70,6 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $object->resource('resource')->status);
     }
 
-    public function testResourceWithExtraArguments_ExpectParametersAvailableInResource(): void
-    {
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap']]);
-        $this->createResource('resource-params', '<?php return function(array $conf, string $param1) { return (object)["status" => "Yes!" . $param1]; };');
-
-        $object = new Bootstrap(sys_get_temp_dir());
-
-        self::assertEquals('Yes!test', $object->resource('resource-params', "test")->status);
-    }
-
     public function testResourceDependingOfOtherResource(): void
     {
 
@@ -133,9 +123,12 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["BOOTSTRAP" => ["resource-namespace" => 'myapp\\resources'], "dependency" => ["status" => $value]]);
+        $this->createConfig('config.default', ["BOOTSTRAP" => [], "dependency" => ["status" => $value]]);
         $this->createResource('dependency', '<?php return function(array $configuration) : object { return (object)["status" => $configuration["status"]]; };');
-        $this->createResource('resource-dependent', '<?php return function(array $configuration, \\myapp\\resources\\dependency $resource) { return (object)["status" => $resource()->status]; };');
+
+        $this->createResource('resource-dependent', '<?php
+        return #[\rikmeijer\Bootstrap\Dependency(resource: "dependency")] function(array $configuration, object $resource) { return (object)["status" => $resource->status]; 
+        };');
 
         $object = new Bootstrap(sys_get_temp_dir());
 
