@@ -70,6 +70,16 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $object->resource('resource')->status);
     }
 
+    public function testResourceWithExtraArguments_ExpectParametersAvailableInResource(): void
+    {
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap']]);
+        $this->createResource('resource-params', '<?php return function(array $conf, string $param1) { return (object)["status" => "Yes!" . $param1]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        self::assertEquals('Yes!test', $object->resource('resource-params', "test")->status);
+    }
+
     public function testResourceDependingOfOtherResource(): void
     {
 

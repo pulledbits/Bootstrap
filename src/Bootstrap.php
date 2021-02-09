@@ -58,7 +58,7 @@ final class Bootstrap
         $this->configuration = $this->config('BOOTSTRAP');
     }
 
-    public function resource(string $identifier): object
+    public function resource(string $identifier, ...$extraArguments): object
     {
         if (array_key_exists($identifier, $this->resources)) {
             return $this->resources[$identifier];
@@ -71,7 +71,9 @@ final class Bootstrap
         $arguments = [];
         if ($reflection->getNumberOfParameters() > 0) {
             $arguments[] = $this->config($identifier);
-            if ($reflection->getNumberOfParameters() > 1) { // multiple parameters
+            if ($reflection->getNumberOfParameters() === 1) { // multiple parameters
+                // do nothing
+            } elseif (array_key_exists('resource-namespace', $this->configuration)) {
                 $resourceNS = $this->configuration['resource-namespace'];
                 foreach (array_slice($reflection->getParameters(), 1) as $reflectionParameter) {
                     $type = $reflectionParameter->getType();
@@ -81,14 +83,22 @@ final class Bootstrap
                     spl_autoload_register($autoloader = function (string $class) use ($resourceNS) {
                         if (strpos($class, $resourceNS) === 0) {
                             $resource = $this->openResource(str_replace([$resourceNS . '\\', '\\'], ['', '/'], $class));
-                            $returnType = (new ReflectionFunction($resource))->getReturnType();
+                            $resourceReflection = (new ReflectionFunction($resource));
+                            if ($resourceReflection->hasReturnType() === false) {
+                                $returnType = 'void';
+                                $return = '';
+                            } else {
+                                $returnType = ($resourceReflection->getReturnType()->isBuiltin() === false ? '\\' : '') . $resourceReflection->getReturnType()->getName();
+                                $return = 'return ';
+                            }
+
                             $positionLastNSSeparator = strrpos($class, '\\');
                             $namespace = substr($class, 0, $positionLastNSSeparator);
                             eval('namespace ' . $namespace . ' { 
                         class ' . substr($class, $positionLastNSSeparator + 1) . ' {
                             public function __construct(private \\' . __CLASS__ . ' $bootstrap) {}
-                            public function __invoke() : ' . (is_null($returnType) === false ? $returnType : 'void') . ' {
-                                 ' . (is_null($returnType) === false ? 'return ' : '') . '$this->bootstrap->resource("' . str_replace([$resourceNS . '\\', '\\'], ['', '/'], $class) . '");
+                            public function __invoke() : ' . $returnType . ' {
+                                 ' . $return . '$this->bootstrap->resource("' . str_replace([$resourceNS . '\\', '\\'], ['', '/'], $class) . '");
                             }
                         } 
                     }');
@@ -101,7 +111,7 @@ final class Bootstrap
                 }
             }
         }
-        return $this->resources[$identifier] = $resource(...$arguments);
+        return $this->resources[$identifier] = $resource(...(array_merge($arguments, $extraArguments)));
     }
 
     private function openResource(string $identifier): Closure
