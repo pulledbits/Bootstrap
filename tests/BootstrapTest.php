@@ -70,6 +70,16 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $object->resource('resource')->status);
     }
 
+    public function testResourceWithoutTypehintForConfig(): void
+    {
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap']]);
+        $this->createResource('resource', '<?php return function($configuration) { return (object)["status" => "Yes!"]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        self::assertEquals('Yes!', $object->resource('resource')->status);
+    }
+
     public function testResourceDependingOfOtherResource(): void
     {
 
@@ -133,6 +143,22 @@ final class BootstrapTest extends TestCase
         $object = new Bootstrap(sys_get_temp_dir());
 
         self::assertEquals($value, $object->resource('resource-dependent')->status);
+    }
+
+    public function testWhenNoConfigurationIsRequired_ExpectOnlyDependenciesInjectedByBootstrap(): void
+    {
+        $value = uniqid('', true);
+
+        $this->createConfig('config.default', ["BOOTSTRAP" => [], "dependency2" => ["status" => $value]]);
+        $this->createResource('dependency2', '<?php return function(array $configuration) : object { return (object)["status" => $configuration["status"]]; };');
+
+        $this->createResource('resource-dependent2', '<?php
+        return #[\rikmeijer\Bootstrap\Dependency(resource: "dependency2")] function(object $resource) { return (object)["status" => $resource->status]; 
+        };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        self::assertEquals($value, $object->resource('resource-dependent2')->status);
     }
 
     public function testResourceCache(): void

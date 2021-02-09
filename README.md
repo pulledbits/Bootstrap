@@ -42,7 +42,7 @@ return function (array $configuration) : LoggerInterface {
 ```
 
 Other resource dependant of the logger resource, dependencies are automatically injected based on given (named)
-attributes
+attributes. Configuration parameter is optional.
 
 ```php
 <?php
@@ -52,10 +52,9 @@ use \rikmeijer\Bootstrap\Dependency;
 
 return 
 #[Dependency(loggerParameter: "logger")]
-function (array $configuration, LoggerInterface $loggerParameter) : LoggerInterface {
+function (LoggerInterface $loggerParameter) : LoggerInterface {
     $loggerParameter->emergency("Houston, we have a problem.");
 };
-
 ```
 
 /someother/file.php

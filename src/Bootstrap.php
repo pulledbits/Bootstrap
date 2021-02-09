@@ -71,8 +71,16 @@ final class Bootstrap
         try {
             $reflection = new ReflectionFunction($resource);
             if ($reflection->getNumberOfParameters() > 0) {
-                $arguments[$reflection->getParameters()[0]->getName()] = $this->config($identifier);
-                if ($reflection->getNumberOfParameters() > 1) { // multiple parameters
+                $firstParameter = $reflection->getParameters()[0];
+                if (is_null($firstParameter->getType())) {
+                    if ($firstParameter->getName() === 'configuration') {
+                        $arguments[$firstParameter->getName()] = $this->config($identifier);
+                    }
+                } elseif ($firstParameter->getType()->getName() === 'array') {
+                    $arguments[$firstParameter->getName()] = $this->config($identifier);
+                }
+
+                if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
                     $attributes = $reflection->getAttributes();
                     $dependencyArguments = [];
                     foreach ($attributes as $attribute) {
@@ -86,7 +94,7 @@ final class Bootstrap
                 }
             }
         } catch (ReflectionException $e) {
-            $arguments[] = $this->config($identifier);
+
         }
 
         return $this->resources[$identifier] = $resource(...$arguments);
@@ -102,7 +110,6 @@ final class Bootstrap
         return $path . DIRECTORY_SEPARATOR . $identifier . '.php';
     }
 
-    /** @deprecated use DependencyAttribute instead */
     private function openResource(string $identifier): Closure
     {
 
@@ -114,6 +121,7 @@ final class Bootstrap
                 $this->bootstrap = $bootstrap;
             }
 
+            /** @deprecated use DependencyAttribute instead */
             final public function resource(string $resource): object
             {
                 return $this->bootstrap->resource($resource);
