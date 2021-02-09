@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Closure;
+use ReflectionFunction;
 
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
@@ -54,26 +55,64 @@ final class Bootstrap
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
+        $this->configuration = $this->config('BOOTSTRAP');
     }
 
-    public function resource(string $resource): object
+    public function resource(string $identifier): object
     {
-        if (array_key_exists($resource, $this->resources)) {
-            return $this->resources[$resource];
+        if (array_key_exists($identifier, $this->resources)) {
+            return $this->resources[$identifier];
         }
-        $configuration = $this->config('BOOTSTRAP');
-        if (array_key_exists('path', $configuration)) {
-            $path = $configuration['path'];
+
+        $resource = $this->openResource($identifier);
+
+        $reflection = new ReflectionFunction($resource);
+
+        $arguments = [];
+        if ($reflection->getNumberOfParameters() > 0) {
+            $arguments[] = $this->config($identifier);
+            if ($reflection->getNumberOfParameters() > 1) { // multiple parameters
+                $resourceNS = $this->configuration['resource-namespace'];
+                foreach (array_slice($reflection->getParameters(), 1) as $reflectionParameter) {
+                    $type = $reflectionParameter->getType();
+                    $class = null !== $type ? $type->getName() : null;
+
+
+                    spl_autoload_register($autoloader = function (string $class) use ($resourceNS) {
+                        if (strpos($class, $resourceNS) === 0) {
+                            $resource = $this->openResource(str_replace([$resourceNS . '\\', '\\'], ['', '/'], $class));
+                            $returnType = (new ReflectionFunction($resource))->getReturnType();
+                            $positionLastNSSeparator = strrpos($class, '\\');
+                            $namespace = substr($class, 0, $positionLastNSSeparator);
+                            eval('namespace ' . $namespace . ' { 
+                        class ' . substr($class, $positionLastNSSeparator + 1) . ' {
+                            public function __construct(private \\' . __CLASS__ . ' $bootstrap) {}
+                            public function __invoke() : ' . (is_null($returnType) === false ? $returnType : 'void') . ' {
+                                 ' . (is_null($returnType) === false ? 'return ' : '') . '$this->bootstrap->resource("' . str_replace([$resourceNS . '\\', '\\'], ['', '/'], $class) . '");
+                            }
+                        } 
+                    }');
+                        }
+                    });
+
+                    $arguments[] = new $class($this);
+
+                    spl_autoload_unregister($autoloader);
+                }
+            }
+        }
+        return $this->resources[$identifier] = $resource(...$arguments);
+    }
+
+    private function openResource(string $identifier): Closure
+    {
+        if (array_key_exists('path', $this->configuration)) {
+            $path = $this->configuration['path'];
         } else {
             $path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
         }
 
-        return $this->resources[$resource] = $this->openResource($path . DIRECTORY_SEPARATOR . $resource . '.php')($this->config($resource));
-    }
-
-    private function openResource(string $path): Closure
-    {
-        return (require $path)->bindTo(new class($this) {
+        return (require $path . DIRECTORY_SEPARATOR . $identifier . '.php')->bindTo(new class($this) {
             private Bootstrap $bootstrap;
 
             public function __construct(Bootstrap $bootstrap)

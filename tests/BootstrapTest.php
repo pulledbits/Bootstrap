@@ -2,6 +2,7 @@
 
 namespace rikmeijer\Bootstrap\tests;
 
+use Closure;
 use PHPUnit\Framework\TestCase;
 use rikmeijer\Bootstrap\Bootstrap;
 
@@ -118,16 +119,30 @@ final class BootstrapTest extends TestCase
         self::assertEquals($value, $object->resource('resource')->status);
     }
 
+    public function testWhenDependentResourcesInSignature_ExpectDependenciesInjectedByBootstrap(): void
+    {
+        $value = uniqid('', true);
+
+        $this->createConfig('config.default', ["BOOTSTRAP" => ["resource-namespace" => 'myapp\\resources'], "dependency" => ["status" => $value]]);
+        $this->createResource('dependency', '<?php return function(array $configuration) : object { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('resource-dependent', '<?php return function(array $configuration, \\myapp\\resources\\dependency $resource) { return (object)["status" => $resource()->status]; };');
+
+        $object = new Bootstrap(sys_get_temp_dir());
+
+        self::assertEquals($value, $object->resource('resource-dependent')->status);
+    }
+
     public function testResourceCache(): void
     {
         $this->createConfig('config.default', []);
-        $this->createResource('resource', '<?php return function() { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
         $object = new Bootstrap(sys_get_temp_dir());
-        self::assertEquals('Yes!', $object->resource('resource')->status);
+        self::assertEquals('Yes!', $object->resource('resource-cache')->status);
 
-        $this->createResource('resource', '<?php return function($bootstrap) { return (object)["status" => "No!"];};');
-        self::assertEquals('Yes!', $object->resource('resource')->status);
+        $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "No!"];};');
+        self::assertNotInstanceOf(Closure::class, $object->resource('resource-cache'));
+        self::assertEquals('Yes!', $object->resource('resource-cache')->status);
 
     }
 
@@ -151,7 +166,9 @@ final class BootstrapTest extends TestCase
 
         @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'resource.php');
 
-        @unlink(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'resource.php');
+        foreach (glob(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . '*.php') as $tmpFile) {
+            @unlink($tmpFile);
+        }
         @rmdir(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bootstrap');
     }
 }
