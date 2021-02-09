@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Closure;
+use ReflectionException;
 use ReflectionFunction;
 
 /**
@@ -66,23 +67,26 @@ final class Bootstrap
 
         $resource = $this->openResource($identifier);
 
-        $reflection = new ReflectionFunction($resource);
-
         $arguments = [];
-        if ($reflection->getNumberOfParameters() > 0) {
-            $arguments[] = $this->config($identifier);
-            if ($reflection->getNumberOfParameters() > 1) { // multiple parameters
-                $attributes = $reflection->getAttributes();
-                foreach ($attributes as $attribute) {
-                    switch ($attribute->getName()) {
-                        case Dependency::class:
-                            foreach ($attribute->getArguments() as $parameterIdentifier => $resourceIdentifier) {
-                                $arguments[$parameterIdentifier] = $this->resource($resourceIdentifier);
-                            }
-                            break;
+        try {
+            $reflection = new ReflectionFunction($resource);
+            if ($reflection->getNumberOfParameters() > 0) {
+                $arguments[$reflection->getParameters()[0]->getName()] = $this->config($identifier);
+                if ($reflection->getNumberOfParameters() > 1) { // multiple parameters
+                    $attributes = $reflection->getAttributes();
+                    $dependencyArguments = [];
+                    foreach ($attributes as $attribute) {
+                        match ($attribute->getName()) {
+                            Dependency::class => $dependencyArguments = $attribute->getArguments()
+                        };
                     }
+                    $arguments = array_merge($arguments, array_map(function (string $resourceIdentifier) {
+                        return $this->resource($resourceIdentifier);
+                    }, $dependencyArguments));
                 }
             }
+        } catch (ReflectionException $e) {
+            $arguments[] = $this->config($identifier);
         }
 
         return $this->resources[$identifier] = $resource(...$arguments);
