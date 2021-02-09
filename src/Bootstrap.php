@@ -2,9 +2,9 @@
 
 namespace rikmeijer\Bootstrap;
 
-use Closure;
 use ReflectionException;
 use ReflectionFunction;
+use ReflectionParameter;
 
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
@@ -65,18 +65,27 @@ final class Bootstrap
             return $this->resources[$identifier];
         }
 
-        $resource = $this->openResource($identifier);
+        $resource = (require $this->resourcePath($identifier))->bindTo(new class($this) {
+            private Bootstrap $bootstrap;
+
+            public function __construct(Bootstrap $bootstrap)
+            {
+                $this->bootstrap = $bootstrap;
+            }
+
+            /** @deprecated use DependencyAttribute instead */
+            final public function resource(string $resource): object
+            {
+                return $this->bootstrap->resource($resource);
+            }
+        });
 
         $arguments = [];
         try {
             $reflection = new ReflectionFunction($resource);
             if ($reflection->getNumberOfParameters() > 0) {
                 $firstParameter = $reflection->getParameters()[0];
-                if (is_null($firstParameter->getType())) {
-                    if ($firstParameter->getName() === 'configuration') {
-                        $arguments[$firstParameter->getName()] = $this->config($identifier);
-                    }
-                } elseif ($firstParameter->getType()->getName() === 'array') {
+                if ($this->resourceRequiresConfigurationParameter($firstParameter)) {
                     $arguments[$firstParameter->getName()] = $this->config($identifier);
                 }
 
@@ -100,6 +109,20 @@ final class Bootstrap
         return $this->resources[$identifier] = $resource(...$arguments);
     }
 
+    private function resourceRequiresConfigurationParameter(ReflectionParameter $firstParameter): bool
+    {
+        $firstParameterType = $firstParameter->getType();
+        $firstParameterName = $firstParameter->getName();
+        if (is_null($firstParameterType)) {
+            if ($firstParameterName === 'configuration') {
+                return true;
+            }
+        } elseif ($firstParameterType->getName() === 'array') {
+            return true;
+        }
+        return false;
+    }
+
     private function resourcePath(string $identifier): string
     {
         if (array_key_exists('path', $this->configuration)) {
@@ -108,25 +131,6 @@ final class Bootstrap
             $path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
         }
         return $path . DIRECTORY_SEPARATOR . $identifier . '.php';
-    }
-
-    private function openResource(string $identifier): Closure
-    {
-
-        return (require $this->resourcePath($identifier))->bindTo(new class($this) {
-            private Bootstrap $bootstrap;
-
-            public function __construct(Bootstrap $bootstrap)
-            {
-                $this->bootstrap = $bootstrap;
-            }
-
-            /** @deprecated use DependencyAttribute instead */
-            final public function resource(string $resource): object
-            {
-                return $this->bootstrap->resource($resource);
-            }
-        });
     }
 
     private function config(string $section): array
