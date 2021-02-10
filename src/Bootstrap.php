@@ -64,6 +64,11 @@ final class Bootstrap
         }
     }
 
+    public static function load(string $configurationPath): self
+    {
+        return new self($configurationPath);
+    }
+
     public function resource(string $identifier): object
     {
         if (array_key_exists($identifier, $this->resources)) {

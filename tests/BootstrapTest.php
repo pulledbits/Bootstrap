@@ -77,7 +77,7 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => $this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap']]);
         $this->createResource('resource', '<?php return function($configuration) { return (object)["status" => "Yes!"]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals('Yes!', $object->resource('resource')->status);
     }
@@ -89,7 +89,7 @@ final class BootstrapTest extends TestCase
         $this->createResource('resource', '<?php return function(array $configuration) { return (object)["status" => $configuration["result"]]; };');
         $this->createResource('resource2', '<?php return function(array $configuration) { return (object)["status2" => $this->resource("resource")->status]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals('Yes!', $object->resource('resource2')->status2);
     }
@@ -101,7 +101,7 @@ final class BootstrapTest extends TestCase
         $this->createResource('resource3', '<?php return function(array $configuration) { return (object)["status" => $configuration["result"]]; };');
         $this->createResource('resource4', '<?php return function(array $configuration) { return (object)["status2" => $this->config("resource3")["result"]]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         $this->expectErrorMessage('Call to undefined method class@anonymous::config()');
         $object->resource('resource4')->status2;
@@ -113,7 +113,7 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', []);
         $this->createResource('resource', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals('Yes!', $object->resource('resource')->status);
 
@@ -126,7 +126,7 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', ["resource" => ["status" => $value]]);
         $this->createResource('resource', '<?php return function(array $configuration) { return (object)["status" => $configuration["status"]]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals($value, $object->resource('resource')->status);
     }
@@ -142,7 +142,7 @@ final class BootstrapTest extends TestCase
         return #[\rikmeijer\Bootstrap\Dependency(resource: "dependency")] function(array $configuration, object $resource) { return (object)["status" => $resource->status]; 
         };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals($value, $object->resource('resource-dependent')->status);
     }
@@ -158,7 +158,7 @@ final class BootstrapTest extends TestCase
         return #[\rikmeijer\Bootstrap\Dependency(resource: "dependency2")] function(object $resource) { return (object)["status" => $resource->status]; 
         };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
 
         self::assertEquals($value, $object->resource('resource-dependent2')->status);
     }
@@ -168,7 +168,7 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', []);
         $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "Yes!"]; };');
 
-        $object = new Bootstrap($this->getResourcesRoot());
+        $object = Bootstrap::load($this->getResourcesRoot());
         self::assertEquals('Yes!', $object->resource('resource-cache')->status);
 
         $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "No!"];};');
