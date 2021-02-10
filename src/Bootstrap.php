@@ -51,11 +51,17 @@ final class Bootstrap
 {
     private string $configurationPath;
     private array $resources = [];
+    private string $path;
 
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
-        $this->configuration = Configuration::open($this->configurationPath, ('BOOTSTRAP'));
+        $this->path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
+
+        $configuration = Configuration::open($this->configurationPath, ('BOOTSTRAP'));
+        if (array_key_exists('path', $configuration)) {
+            $this->path = $configuration['path'];
+        }
     }
 
     public function resource(string $identifier): object
@@ -124,11 +130,6 @@ final class Bootstrap
 
     private function resourcePath(string $identifier): string
     {
-        if (array_key_exists('path', $this->configuration)) {
-            $path = $this->configuration['path'];
-        } else {
-            $path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
-        }
-        return $path . DIRECTORY_SEPARATOR . $identifier . '.php';
+        return $this->path . DIRECTORY_SEPARATOR . $identifier . '.php';
     }
 }
