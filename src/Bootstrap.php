@@ -51,12 +51,11 @@ final class Bootstrap
 {
     private string $configurationPath;
     private array $resources = [];
-    private array $config;
 
     public function __construct(string $configurationPath)
     {
         $this->configurationPath = $configurationPath;
-        $this->configuration = $this->config('BOOTSTRAP');
+        $this->configuration = Configuration::open($this->configurationPath, ('BOOTSTRAP'));
     }
 
     public function resource(string $identifier): object
@@ -86,7 +85,7 @@ final class Bootstrap
             if ($reflection->getNumberOfParameters() > 0) {
                 $firstParameter = $reflection->getParameters()[0];
                 if ($this->resourceRequiresConfigurationParameter($firstParameter)) {
-                    $arguments[$firstParameter->getName()] = $this->config($identifier);
+                    $arguments[$firstParameter->getName()] = Configuration::open($this->configurationPath, ($identifier));
                 }
 
                 if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
@@ -131,35 +130,5 @@ final class Bootstrap
             $path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
         }
         return $path . DIRECTORY_SEPARATOR . $identifier . '.php';
-    }
-
-    private function config(string $section): array
-    {
-        if (isset($this->config) === false) {
-            $this->config = array_merge_recursive_distinct($this->openConfigDefaults(), $this->openConfigLocal());
-        }
-        if (array_key_exists($section, $this->config) === false) {
-            return [];
-        }
-        return $this->config[$section];
-    }
-
-    private function openConfigDefaults(): array
-    {
-        return $this->openConfig($this->configurationPath . DIRECTORY_SEPARATOR . 'config.defaults.php');
-    }
-
-    private function openConfigLocal(): array
-    {
-        return $this->openConfig($this->configurationPath . DIRECTORY_SEPARATOR . 'config.php');
-    }
-
-    private function openConfig(string $path): array
-    {
-        if (file_exists($path) === false) {
-            return [];
-        }
-        $config = (include $path);
-        return is_array($config) ? $config : [];
     }
 }
