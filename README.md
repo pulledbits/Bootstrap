@@ -1,6 +1,6 @@
 # Bootstrap
 
-Bootstrap class for loading resources and configuration
+Bootstrap Closure for loading resources and configuration
 
 ## Usage
 
@@ -11,7 +11,7 @@ use rikmeijer\Bootstrap\Bootstrap;
 
 // include composer autoloader
 require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-return new Bootstrap(__DIR__); // argument is configuration-path
+return Bootstrap::load(__DIR__); // argument is configuration-path
 ```
 
 Default configuration options: /config.defaults.php (/config.php is similar but can be gitignored and used for sensitive data)
@@ -63,5 +63,5 @@ function (LoggerInterface $loggerParameter) : LoggerInterface {
 <?php
 
 $bootstrap = require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
-$logger = $bootstrap->resource('logger');
+$logger = $bootstrap('logger');
 ```
