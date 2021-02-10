@@ -50,95 +50,81 @@ function array_merge_recursive_distinct(array $array1, array $array2): array
 
 final class Bootstrap
 {
-    private string $configurationPath;
-    private array $resources = [];
-    private string $path;
-
-    public function __construct(string $configurationPath)
-    {
-        $this->configurationPath = $configurationPath;
-        $this->path = $this->configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
-
-        $configuration = Configuration::open($this->configurationPath, ('BOOTSTRAP'));
-        if (array_key_exists('path', $configuration)) {
-            $this->path = $configuration['path'];
-        }
-    }
-
     public static function load(string $configurationPath): Closure
     {
-        $bootstrap = new self($configurationPath);
-        return function (string $resourceIdentifier) use ($bootstrap) {
-            return $bootstrap->resource($resourceIdentifier);
+        $path = function () use ($configurationPath): string {
+            $configuration = Configuration::open($configurationPath, ('BOOTSTRAP'));
+            if (array_key_exists('path', $configuration)) {
+                return $configuration['path'];
+            }
+            return $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap';
         };
-    }
 
-    public function resource(string $identifier): object
-    {
-        if (array_key_exists($identifier, $this->resources)) {
-            return $this->resources[$identifier];
-        }
-
-        $resource = (require $this->resourcePath($identifier))->bindTo(new class($this) {
-            private Bootstrap $bootstrap;
-
-            public function __construct(Bootstrap $bootstrap)
-            {
-                $this->bootstrap = $bootstrap;
+        $resources = [];
+        return $bootstrap = function (string $identifier) use (&$bootstrap, $configurationPath, $path, &$resources) {
+            if (array_key_exists($identifier, $resources)) {
+                return $resources[$identifier];
             }
+            $resourcePath = static function (Closure $path, string $identifier) {
+                return $path() . DIRECTORY_SEPARATOR . $identifier . '.php';
+            };
 
-            /** @deprecated use DependencyAttribute instead */
-            final public function resource(string $resource): object
-            {
-                return $this->bootstrap->resource($resource);
-            }
-        });
-
-        $arguments = [];
-        try {
-            $reflection = new ReflectionFunction($resource);
-            if ($reflection->getNumberOfParameters() > 0) {
-                $firstParameter = $reflection->getParameters()[0];
-                if ($this->resourceRequiresConfigurationParameter($firstParameter)) {
-                    $arguments[$firstParameter->getName()] = Configuration::open($this->configurationPath, ($identifier));
-                }
-
-                if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
-                    $attributes = $reflection->getAttributes();
-                    $dependencyArguments = [];
-                    foreach ($attributes as $attribute) {
-                        match ($attribute->getName()) {
-                            Dependency::class => $dependencyArguments = $attribute->getArguments()
-                        };
+            $resourceRequiresConfigurationParameter = function (ReflectionParameter $firstParameter): bool {
+                $firstParameterType = $firstParameter->getType();
+                $firstParameterName = $firstParameter->getName();
+                if (is_null($firstParameterType)) {
+                    if ($firstParameterName === 'configuration') {
+                        return true;
                     }
-                    $arguments = array_merge($arguments, array_map(function (string $resourceIdentifier) {
-                        return $this->resource($resourceIdentifier);
-                    }, $dependencyArguments));
+                } elseif ($firstParameterType->getName() === 'array') {
+                    return true;
                 }
+                return false;
+            };
+
+
+            $resource = (require $resourcePath($path, $identifier))->bindTo(new class($bootstrap) {
+                private Closure $bootstrap;
+
+                public function __construct(Closure $bootstrap)
+                {
+                    $this->bootstrap = $bootstrap;
+                }
+
+                /** @deprecated use DependencyAttribute instead */
+                final public function resource(string $resource): object
+                {
+                    return ($this->bootstrap)($resource);
+                }
+            });
+
+            $arguments = [];
+            try {
+                $reflection = new ReflectionFunction($resource);
+                if ($reflection->getNumberOfParameters() > 0) {
+                    $firstParameter = $reflection->getParameters()[0];
+                    if ($resourceRequiresConfigurationParameter($firstParameter)) {
+                        $arguments[$firstParameter->getName()] = Configuration::open($configurationPath, ($identifier));
+                    }
+
+                    if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
+                        $attributes = $reflection->getAttributes();
+                        $dependencyArguments = [];
+                        foreach ($attributes as $attribute) {
+                            match ($attribute->getName()) {
+                                Dependency::class => $dependencyArguments = $attribute->getArguments()
+                            };
+                        }
+                        $arguments = array_merge($arguments, array_map(function (string $resourceIdentifier) use ($bootstrap) {
+                            return $bootstrap($resourceIdentifier);
+                        }, $dependencyArguments));
+                    }
+                }
+            } catch (ReflectionException $e) {
+
             }
-        } catch (ReflectionException $e) {
 
-        }
-
-        return $this->resources[$identifier] = $resource(...$arguments);
-    }
-
-    private function resourceRequiresConfigurationParameter(ReflectionParameter $firstParameter): bool
-    {
-        $firstParameterType = $firstParameter->getType();
-        $firstParameterName = $firstParameter->getName();
-        if (is_null($firstParameterType)) {
-            if ($firstParameterName === 'configuration') {
-                return true;
-            }
-        } elseif ($firstParameterType->getName() === 'array') {
-            return true;
-        }
-        return false;
-    }
-
-    private function resourcePath(string $identifier): string
-    {
-        return $this->path . DIRECTORY_SEPARATOR . $identifier . '.php';
+            return $resources[$identifier] = $resource(...$arguments);
+        };
     }
 }
