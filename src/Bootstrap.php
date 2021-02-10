@@ -2,6 +2,7 @@
 
 namespace rikmeijer\Bootstrap;
 
+use Closure;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionParameter;
@@ -64,9 +65,12 @@ final class Bootstrap
         }
     }
 
-    public static function load(string $configurationPath): self
+    public static function load(string $configurationPath): Closure
     {
-        return new self($configurationPath);
+        $bootstrap = new self($configurationPath);
+        return function (string $resourceIdentifier) use ($bootstrap) {
+            return $bootstrap->resource($resourceIdentifier);
+        };
     }
 
     public function resource(string $identifier): object
