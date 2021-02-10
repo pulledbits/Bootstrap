@@ -1,6 +1,6 @@
 {
   "name": "rikmeijer/bootstrap",
-  "description": "Bootstrap class for loading resources",
+  "description": "Bootstrap Closure for loading resources",
   "license": "MIT",
   "type": "library",
   "require": {
