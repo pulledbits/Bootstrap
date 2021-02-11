@@ -31,25 +31,12 @@ final class Bootstrap
         };
 
         $bootstrap = static function (string $identifier) use (&$bootstrap, $config, $resources) {
-            $resourceRequiresConfigurationParameter = function (ReflectionParameter $firstParameter): bool {
-                $firstParameterType = $firstParameter->getType();
-                $firstParameterName = $firstParameter->getName();
-                if (is_null($firstParameterType)) {
-                    if ($firstParameterName === 'configuration') {
-                        return true;
-                    }
-                } elseif ($firstParameterType->getName() === 'array') {
-                    return true;
-                }
-                return false;
-            };
-
             $arguments = [];
             try {
                 $reflection = new ReflectionFunction($resources($identifier));
                 if ($reflection->getNumberOfParameters() > 0) {
                     $firstParameter = $reflection->getParameters()[0];
-                    if ($resourceRequiresConfigurationParameter($firstParameter)) {
+                    if (self::resourceRequiresConfigurationParameter($firstParameter)) {
                         $arguments[$firstParameter->getName()] = $config($identifier, []);
                     }
 
@@ -74,5 +61,19 @@ final class Bootstrap
         };
 
         return $bootstrap;
+    }
+
+    public static function resourceRequiresConfigurationParameter(ReflectionParameter $firstParameter): bool
+    {
+        $firstParameterType = $firstParameter->getType();
+        $firstParameterName = $firstParameter->getName();
+        if (is_null($firstParameterType)) {
+            if ($firstParameterName === 'configuration') {
+                return true;
+            }
+        } elseif ($firstParameterType->getName() === 'array') {
+            return true;
+        }
+        return false;
     }
 }
