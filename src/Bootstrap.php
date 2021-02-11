@@ -16,20 +16,21 @@ final class Bootstrap
             return Configuration::open($configurationPath, $section, $schema);
         };
 
-        $path = static function () use ($config): string {
+        $path = static function (string $identifier) use ($config): string {
             $configuration = $config('BOOTSTRAP', ['path' => ['url', ['default' => '%configuration-path%' . DIRECTORY_SEPARATOR . 'bootstrap']]]);
-            return $configuration['path'];
+            return $configuration['path'] . DIRECTORY_SEPARATOR . $identifier . '.php';
         };
 
-        $resources = [];
-        $bootstrap = static function (string $identifier) use (&$bootstrap, $configurationPath, $path, &$resources) {
-            if (array_key_exists($identifier, $resources)) {
-                return $resources[$identifier];
+        $resourcesCache = [];
+        $resources = static function (string $identifier) use ($path, &$resourcesCache): callable {
+            if (array_key_exists($identifier, $resourcesCache)) {
+                return $resourcesCache[$identifier];
             }
-            $resourcePath = static function (Closure $path, string $identifier) {
-                return $path() . DIRECTORY_SEPARATOR . $identifier . '.php';
-            };
+            /** @noinspection PhpIncludeInspection */
+            return $resourcesCache[$identifier] = require $path($identifier);
+        };
 
+        $bootstrap = static function (string $identifier) use (&$bootstrap, $config, $resources) {
             $resourceRequiresConfigurationParameter = function (ReflectionParameter $firstParameter): bool {
                 $firstParameterType = $firstParameter->getType();
                 $firstParameterName = $firstParameter->getName();
@@ -43,15 +44,13 @@ final class Bootstrap
                 return false;
             };
 
-            $resource = require $resourcePath($path, $identifier);
-
             $arguments = [];
             try {
-                $reflection = new ReflectionFunction($resource);
+                $reflection = new ReflectionFunction($resources($identifier));
                 if ($reflection->getNumberOfParameters() > 0) {
                     $firstParameter = $reflection->getParameters()[0];
                     if ($resourceRequiresConfigurationParameter($firstParameter)) {
-                        $arguments[$firstParameter->getName()] = Configuration::open($configurationPath, $identifier, []);
+                        $arguments[$firstParameter->getName()] = $config($identifier, []);
                     }
 
                     if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
@@ -71,7 +70,7 @@ final class Bootstrap
                 trigger_error($e->getMessage());
             }
 
-            return $resources[$identifier] = $resource(...$arguments);
+            return $resources($identifier)(...$arguments);
         };
 
         return $bootstrap;
