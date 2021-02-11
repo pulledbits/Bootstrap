@@ -82,21 +82,7 @@ final class Bootstrap
                 return false;
             };
 
-
-            $resource = (require $resourcePath($path, $identifier))->bindTo(new class($bootstrap) {
-                private Closure $bootstrap;
-
-                public function __construct(Closure $bootstrap)
-                {
-                    $this->bootstrap = $bootstrap;
-                }
-
-                /** @deprecated use DependencyAttribute instead */
-                final public function resource(string $resource): object
-                {
-                    return ($this->bootstrap)($resource);
-                }
-            });
+            $resource = require $resourcePath($path, $identifier);
 
             $arguments = [];
             try {
