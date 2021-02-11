@@ -3,14 +3,10 @@
 namespace rikmeijer\Bootstrap;
 
 use Closure;
-use ReflectionAttribute;
-use ReflectionException;
-use ReflectionFunction;
-
 
 final class Bootstrap
 {
-    public static function load(string $configurationPath): Closure
+    public static function load(string $configurationPath): callable
     {
         $config = static function (string $section, array $schema) use ($configurationPath) {
             return Configuration::open($configurationPath, $section, $schema);
@@ -29,33 +25,17 @@ final class Bootstrap
             return $resourcesCache[$identifier] = self::require($path($identifier), $config($identifier, []));
         };
 
-        $bootstrap = static function (string $identifier) use ($resources, &$bootstrap) {
-            return $resources($identifier)(...self::resourceArguments($bootstrap, $resources($identifier)));
-        };
-
-        return $bootstrap;
-    }
-
-    public static function resourceArguments(callable $bootstrap, Closure $resource): array
-    {
-        try {
-            $reflection = new ReflectionFunction($resource);
-            if ($reflection->getNumberOfParameters() === 0) {
-                return [];
+        return new class($resources) { // use class since PHP does not natively support a closure calling itself
+            public function __construct(private Closure $resources)
+            {
             }
-        } catch (ReflectionException $e) {
-            trigger_error($e->getMessage());
-            return [];
-        }
 
-        $arguments = [];
-        $attributes = $reflection->getAttributes();
-        array_walk($attributes, static function (ReflectionAttribute $attribute) use ($bootstrap, &$arguments) {
-            $arguments = array_merge($arguments, match ($attribute->getName()) {
-                Dependency::class => array_map($bootstrap, $attribute->getArguments())
-            });
-        });
-        return $arguments;
+            public function __invoke(string $identifier): callable
+            {
+                $resource = ($this->resources)($identifier);
+                return $resource(...Resource::arguments($this, $resource));
+            }
+        };
     }
 
     /** @noinspection PhpIncludeInspection PhpUnusedParameterInspection */
