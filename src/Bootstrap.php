@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Closure;
+use JetBrains\PhpStorm\Pure;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionParameter;
@@ -36,7 +37,7 @@ final class Bootstrap
                 $reflection = new ReflectionFunction($resources($identifier));
                 if ($reflection->getNumberOfParameters() > 0) {
                     $firstParameter = $reflection->getParameters()[0];
-                    if (self::resourceRequiresConfigurationParameter($firstParameter)) {
+                    if (self::isConfigurationArgument($firstParameter)) {
                         $arguments[$firstParameter->getName()] = $config($identifier, []);
                     }
 
@@ -63,7 +64,7 @@ final class Bootstrap
         return $bootstrap;
     }
 
-    public static function resourceRequiresConfigurationParameter(ReflectionParameter $firstParameter): bool
+    #[Pure] public static function isConfigurationArgument(ReflectionParameter $firstParameter): bool
     {
         $firstParameterType = $firstParameter->getType();
         $firstParameterName = $firstParameter->getName();
