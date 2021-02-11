@@ -4,19 +4,21 @@ Bootstrap Closure for loading resources and configuration
 
 ## Usage
 
-/bootstrap.php
+### /bootstrap.php
+
 ```php
-<?php
+<?php /** @noinspection ALL */
 use rikmeijer\Bootstrap\Bootstrap;
 
 // include composer autoloader
 require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-return Bootstrap::load(__DIR__); // argument is configuration-path
+return Bootstrap::initialize(__DIR__); // argument is configuration-path
 ```
 
+### /config.defaults.php
 Default configuration options: /config.defaults.php (/config.php is similar but can be gitignored and used for sensitive data)
 ```php
-<?php
+<?php /** @noinspection ALL */
 return [
     'logger' => [ // must be same as basename of resource loader
         'channel' => 'MyApp'
@@ -27,40 +29,48 @@ return [
 ];
 ```
 
-Resource loader: /bootstrap/logger.php
+### /bootstrap/logger.php
+
+Resource loader for logger
 
 ```php
-<?php
+<?php /** @noinspection ALL */
 
-use Monolog\Handler\SyslogHandler;use Psr\Log\LoggerInterface;
+use Monolog\Handler\SyslogHandler;
+use Psr\Log\LoggerInterface;
 
-return function (array $configuration) : LoggerInterface {
+return static function(string $level, string $message) use ($configuration) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new SyslogHandler("debug"));
+    switch ($level) {
+        case 'emergency':
+            $logger->emergency($message);
+            break;
+    }
     return $logger;
 };
 ```
 
+### /bootstrap/logger-dependant.php
+
 Other resource dependant of the logger resource, dependencies are automatically injected based on given (named)
-attributes. Configuration parameter is optional.
+attributes. Use of $configuration or $bootstrap is optional. Additional parameters can be passed to $bootstrap as
+arguments
 
 ```php
-<?php
+<?php /** @noinspection ALL */
 
 use Psr\Log\LoggerInterface;
 use \rikmeijer\Bootstrap\Dependency;
 
-return 
-#[Dependency(loggerParameter: "logger")]
-function (LoggerInterface $loggerParameter) : LoggerInterface {
-    $loggerParameter->emergency("Houston, we have a problem.");
+return static function() use ($bootstrap) : LoggerInterface {
+    $bootstrap('logger', 'emergency', "Houston, we have a problem.");
 };
 ```
 
-/someother/file.php
-
+### /public/index.php
 ```php
-<?php
+<?php /** @noinspection ALL */
 
 $bootstrap = require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
 $logger = $bootstrap('logger');

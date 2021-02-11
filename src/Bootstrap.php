@@ -4,9 +4,9 @@ namespace rikmeijer\Bootstrap;
 
 final class Bootstrap
 {
-    public static function load(string $configurationPath): callable
+    public static function initialize(string $configurationPath): callable
     {
-        return Resource::wrap(static function (string $section, array $schema) use ($configurationPath) {
+        return Resource::loader(static function (string $section, array $schema) use ($configurationPath) {
             return Configuration::open($configurationPath, $section, $schema);
         });
     }
