@@ -3,11 +3,9 @@
 namespace rikmeijer\Bootstrap;
 
 use Closure;
-use JetBrains\PhpStorm\Pure;
 use ReflectionAttribute;
 use ReflectionException;
 use ReflectionFunction;
-use ReflectionParameter;
 
 
 final class Bootstrap
@@ -24,24 +22,21 @@ final class Bootstrap
         };
 
         $resourcesCache = [];
-        $resources = static function (string $identifier) use ($path, &$resourcesCache): callable {
+        $resources = static function (string $identifier) use ($config, $path, &$resourcesCache): callable {
             if (array_key_exists($identifier, $resourcesCache)) {
                 return $resourcesCache[$identifier];
             }
-            /** @noinspection PhpIncludeInspection */
-            return $resourcesCache[$identifier] = require $path($identifier);
+            return $resourcesCache[$identifier] = self::require($path($identifier), $config($identifier, []));
         };
 
-        $bootstrap = static function (string $identifier) use ($config, $resources, &$bootstrap) {
-            return $resources($identifier)(...self::resourceArguments($bootstrap, $resources($identifier), static function () use ($identifier, $config) {
-                return $config($identifier, []);
-            }));
+        $bootstrap = static function (string $identifier) use ($resources, &$bootstrap) {
+            return $resources($identifier)(...self::resourceArguments($bootstrap, $resources($identifier)));
         };
 
         return $bootstrap;
     }
 
-    public static function resourceArguments(callable $bootstrap, Closure $resource, callable $resourceConfig): array
+    public static function resourceArguments(callable $bootstrap, Closure $resource): array
     {
         try {
             $reflection = new ReflectionFunction($resource);
@@ -54,13 +49,6 @@ final class Bootstrap
         }
 
         $arguments = [];
-        $firstParameter = $reflection->getParameters()[0];
-        if (self::isConfigurationArgument($firstParameter)) {
-            $arguments[$firstParameter->getName()] = $resourceConfig();
-        }
-        if ($reflection->getNumberOfParameters() === count($arguments)) {
-            return $arguments;
-        }
         $attributes = $reflection->getAttributes();
         array_walk($attributes, static function (ReflectionAttribute $attribute) use ($bootstrap, &$arguments) {
             $arguments = array_merge($arguments, match ($attribute->getName()) {
@@ -70,17 +58,9 @@ final class Bootstrap
         return $arguments;
     }
 
-    #[Pure] public static function isConfigurationArgument(ReflectionParameter $firstParameter): bool
+    /** @noinspection PhpIncludeInspection PhpUnusedParameterInspection */
+    private static function require(string $path, array $configuration): callable
     {
-        $firstParameterType = $firstParameter->getType();
-        $firstParameterName = $firstParameter->getName();
-        if (is_null($firstParameterType)) {
-            if ($firstParameterName === 'configuration') {
-                return true;
-            }
-        } elseif ($firstParameterType->getName() === 'array') {
-            return true;
-        }
-        return false;
+        return require $path;
     }
 }
