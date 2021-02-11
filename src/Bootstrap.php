@@ -4,6 +4,7 @@ namespace rikmeijer\Bootstrap;
 
 use Closure;
 use JetBrains\PhpStorm\Pure;
+use ReflectionAttribute;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionParameter;
@@ -31,37 +32,42 @@ final class Bootstrap
             return $resourcesCache[$identifier] = require $path($identifier);
         };
 
-        $bootstrap = static function (string $identifier) use (&$bootstrap, $config, $resources) {
-            $arguments = [];
-            try {
-                $reflection = new ReflectionFunction($resources($identifier));
-                if ($reflection->getNumberOfParameters() > 0) {
-                    $firstParameter = $reflection->getParameters()[0];
-                    if (self::isConfigurationArgument($firstParameter)) {
-                        $arguments[$firstParameter->getName()] = $config($identifier, []);
-                    }
-
-                    if ($reflection->getNumberOfParameters() > count($arguments)) { // multiple parameters
-                        $attributes = $reflection->getAttributes();
-                        $dependencyArguments = [];
-                        foreach ($attributes as $attribute) {
-                            match ($attribute->getName()) {
-                                Dependency::class => $dependencyArguments = $attribute->getArguments()
-                            };
-                        }
-                        $arguments = array_merge($arguments, array_map(function (string $resourceIdentifier) use ($bootstrap) {
-                            return $bootstrap($resourceIdentifier);
-                        }, $dependencyArguments));
-                    }
-                }
-            } catch (ReflectionException $e) {
-                trigger_error($e->getMessage());
-            }
-
-            return $resources($identifier)(...$arguments);
+        $bootstrap = static function (string $identifier) use ($config, $resources, &$bootstrap) {
+            return $resources($identifier)(...self::resourceArguments($bootstrap, $resources($identifier), static function () use ($identifier, $config) {
+                return $config($identifier, []);
+            }));
         };
 
         return $bootstrap;
+    }
+
+    public static function resourceArguments(callable $bootstrap, Closure $resource, callable $resourceConfig): array
+    {
+        try {
+            $reflection = new ReflectionFunction($resource);
+            if ($reflection->getNumberOfParameters() === 0) {
+                return [];
+            }
+        } catch (ReflectionException $e) {
+            trigger_error($e->getMessage());
+            return [];
+        }
+
+        $arguments = [];
+        $firstParameter = $reflection->getParameters()[0];
+        if (self::isConfigurationArgument($firstParameter)) {
+            $arguments[$firstParameter->getName()] = $resourceConfig();
+        }
+        if ($reflection->getNumberOfParameters() === count($arguments)) {
+            return $arguments;
+        }
+        $attributes = $reflection->getAttributes();
+        array_walk($attributes, static function (ReflectionAttribute $attribute) use ($bootstrap, &$arguments) {
+            $arguments = array_merge($arguments, match ($attribute->getName()) {
+                Dependency::class => array_map($bootstrap, $attribute->getArguments())
+            });
+        });
+        return $arguments;
     }
 
     #[Pure] public static function isConfigurationArgument(ReflectionParameter $firstParameter): bool
