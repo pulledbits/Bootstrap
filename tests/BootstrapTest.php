@@ -16,7 +16,7 @@ final class BootstrapTest extends TestCase
         $this->createConfig('config.default', ["resource" => ["option" => $value]]);
         fclose($this->streams['config']);
         @unlink($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'config.php');
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
 
         // Act
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
@@ -43,7 +43,7 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config.default', ["resource-custom" => ["option" => $value]]);
         $this->createConfig('config', ["resource-custom" => ["option" => $value2]]);
-        $this->createResource('resource-custom', '<?php return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource-custom', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
         self::assertEquals($value2, $bootstrap('resource-custom')->option);
@@ -55,7 +55,7 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config.default', ["resource" => ["option1" => $value]]);
         $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["option" => $configuration["option1"]]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["option" => $configuration["option1"]]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -65,7 +65,7 @@ final class BootstrapTest extends TestCase
     public function testResource(): void
     {
         $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => $this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap']]);
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -75,7 +75,7 @@ final class BootstrapTest extends TestCase
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
     {
         $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => $this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap']]);
-        $this->createResource('resource', '<?php return function(string $extratext) use ($configuration) { return (object)["status" => "Yes!" . $extratext]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function(string $extratext) use ($configuration) { return (object)["status" => "Yes!" . $extratext]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -85,7 +85,7 @@ final class BootstrapTest extends TestCase
     public function testResourceWithoutTypehintForConfig(): void
     {
         $this->createConfig('config.default', ["BOOTSTRAP" => ["path" => $this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap']]);
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -95,7 +95,7 @@ final class BootstrapTest extends TestCase
     public function testWhenNoResourcePathIsConfigured_ExpectBootstrapDirectoryUnderConfigurationPathToBeUsed(): void
     {
         $this->createConfig('config.default', []);
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -108,7 +108,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config.default', ["resource" => ["status" => $value]]);
-        $this->createResource('resource', '<?php return function() use ($configuration) { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => $configuration["status"]]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -120,7 +120,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config.default', ["BOOTSTRAP" => [], "dependency" => ["status" => $value]]);
-        $this->createResource('dependency', '<?php return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('dependency', '<?php $configuration = $validate([]); return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
 
         $this->createResource('resource-dependent', '<?php
         return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency")->status]; 
@@ -136,7 +136,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config.default', ["BOOTSTRAP" => [], "dependency" => ["status" => $value]]);
-        $this->createResource('dependency', '<?php return function(string $extratext) use ($configuration) : object { return (object)["status" => $configuration["status"] . $extratext]; };');
+        $this->createResource('dependency', '<?php $configuration = $validate([]); return function(string $extratext) use ($configuration) : object { return (object)["status" => $configuration["status"] . $extratext]; };');
 
         $this->createResource('resource-dependent', '<?php
         return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; 
@@ -152,7 +152,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config.default', ["BOOTSTRAP" => [], "dependency2" => ["status" => $value]]);
-        $this->createResource('dependency2', '<?php return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('dependency2', '<?php $configuration = $validate([]); return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
 
         $this->createResource('resource-dependent2', '<?php
         return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency2")->status]; 

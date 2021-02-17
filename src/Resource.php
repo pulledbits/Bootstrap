@@ -9,7 +9,10 @@ class Resource
         $resourcesCache = [];
         return static function (string $identifier, mixed ...$args) use ($config, &$resourcesCache): mixed {
             if (array_key_exists($identifier, $resourcesCache) === false) {
-                $resourcesCache[$identifier] = self::require(Bootstrap::resourcesPath($config) . DIRECTORY_SEPARATOR . $identifier . '.php', $config($identifier, []), Resource::loader($config));
+                $validate = function (array $schema) use ($identifier, $config) {
+                    return $config($identifier, $schema);
+                };
+                $resourcesCache[$identifier] = self::require(Bootstrap::resourcesPath($config) . DIRECTORY_SEPARATOR . $identifier . '.php', $validate, Resource::loader($config));
             }
             return $resourcesCache[$identifier](...$args);
         };
@@ -18,12 +21,12 @@ class Resource
     /**
      * The purpose of the method is shielding other variables from the included script
      * @param string $path
-     * @param array $configuration
+     * @param callable $validate
      * @param callable $bootstrap
      * @return mixed
      * @noinspection PhpIncludeInspection PhpUnusedParameterInspection
      */
-    private static function require(string $path, array $configuration, callable $bootstrap): callable
+    private static function require(string $path, callable $validate, callable $bootstrap): callable
     {
         return (require $path);
     }

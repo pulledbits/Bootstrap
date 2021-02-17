@@ -39,6 +39,8 @@ Resource loader for logger
 use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
 
+$configuration = $validate([]); 
+
 return static function(string $level, string $message) use ($configuration) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new SyslogHandler("debug"));
