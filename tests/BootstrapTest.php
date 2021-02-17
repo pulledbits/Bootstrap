@@ -125,6 +125,14 @@ final class BootstrapTest extends TestCase
         self::assertEquals(Path::join($this->getResourcesRoot(), 'somedir'), $bootstrap('resource')->status);
     }
 
+    public function testWhenConfigurationMissingPatheWihtSubdirs_ExpectJoinedAbsolutePath(): void
+    {
+        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertEquals(Path::join($this->getResourcesRoot(), 'somedir', 'somesubdir'), $bootstrap('resource')->status);
+    }
 
     public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
     {

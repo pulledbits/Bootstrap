@@ -111,11 +111,11 @@ class Configuration
         };
     }
 
-    public static function path(string $defaultValue): callable
+    public static function path(string ...$defaultValue): callable
     {
         return static function (mixed $value, array $context) use ($defaultValue): mixed {
             if ($value === null) {
-                $value = $defaultValue;
+                $value = Path::join(...$defaultValue);
             }
             if (Path::isRelative($value)) {
                 return Path::join($context['configuration-path'], $value);
