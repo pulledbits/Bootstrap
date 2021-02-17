@@ -114,6 +114,16 @@ final class BootstrapTest extends TestCase
         self::assertEquals($value, $bootstrap('resource')->status);
     }
 
+
+    public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
+    {
+        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertEquals($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'somedir', $bootstrap('resource')->status);
+    }
+
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void
     {
         $value = uniqid('', true);

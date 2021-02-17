@@ -108,4 +108,11 @@ class Configuration
             return $value ?? $defaultValue;
         };
     }
+
+    public static function path(string $defaultValue): callable
+    {
+        return static function (mixed $value, array $context) use ($defaultValue): mixed {
+            return $value ?? ($context['configuration-path'] . DIRECTORY_SEPARATOR . $defaultValue);
+        };
+    }
 }
