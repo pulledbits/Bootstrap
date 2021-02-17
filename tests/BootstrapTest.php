@@ -5,6 +5,7 @@ namespace rikmeijer\Bootstrap\tests;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use rikmeijer\Bootstrap\Bootstrap;
+use Webmozart\PathUtil\Path;
 
 final class BootstrapTest extends TestCase
 {
@@ -121,7 +122,18 @@ final class BootstrapTest extends TestCase
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
-        self::assertEquals($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'somedir', $bootstrap('resource')->status);
+        self::assertEquals(Path::join($this->getResourcesRoot(), 'somedir'), $bootstrap('resource')->status);
+    }
+
+
+    public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
+    {
+        $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
+        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertEquals(Path::join($this->getResourcesRoot(), 'somefolder'), $bootstrap('resource')->status);
     }
 
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void

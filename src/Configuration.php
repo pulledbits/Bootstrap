@@ -2,6 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
+use Webmozart\PathUtil\Path;
+
 /**
  * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
  * keys to arrays rather than overwriting the value in the first array with the duplicate
@@ -112,7 +114,13 @@ class Configuration
     public static function path(string $defaultValue): callable
     {
         return static function (mixed $value, array $context) use ($defaultValue): mixed {
-            return $value ?? ($context['configuration-path'] . DIRECTORY_SEPARATOR . $defaultValue);
+            if ($value === null) {
+                return Path::join($context['configuration-path'], $defaultValue);
+            }
+            if (Path::isRelative($value)) {
+                return Path::join($context['configuration-path'], $value);
+            }
+            return $value;
         };
     }
 }
