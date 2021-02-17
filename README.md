@@ -15,13 +15,16 @@ require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autolo
 return Bootstrap::initialize(__DIR__); // argument is configuration-path
 ```
 
-### /config.defaults.php
-Default configuration options: /config.defaults.php (/config.php is similar but can be gitignored and used for sensitive data)
+### /config.php
+
+Configuration options: /config.php (can be gitignored and used for sensitive data), defaults can be set as arguments in
+the resource loader
+
 ```php
 <?php /** @noinspection ALL */
 return [
     'logger' => [ // must be same as basename of resource loader
-        'channel' => 'MyApp'
+        'channel' => 'OurApp'
     ],
     'BOOTSTRAP' => [
         'path' => __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap' // optional: default is directory bootstrap under configuration-path
@@ -40,7 +43,7 @@ use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
 
 $configuration = $validate([
-    "channel" => \rikmeijer\Bootstrap\Configuration::default("myChannel")
+    "channel" => \rikmeijer\Bootstrap\Configuration::default("MyApp")
 ]); 
 
 return static function(string $level, string $message) use ($configuration) : LoggerInterface {

@@ -67,17 +67,12 @@ class Configuration
     public static function open(string $root, string $section, array $schema): array
     {
         if (array_key_exists($root, self::$configs) === false) {
-            self::$configs[$root] = array_merge_recursive_distinct([$section => []], self::openDefaults($root), self::openLocal($root));
+            self::$configs[$root] = array_merge_recursive_distinct([$section => []], self::openLocal($root));
         }
         if (array_key_exists($section, self::$configs[$root]) === false) {
             self::$configs[$root][$section] = [];
         }
         return self::validate($schema, self::$configs[$root][$section], ['configuration-path' => $root]);
-    }
-
-    private static function openDefaults(string $root): array
-    {
-        return self::include($root . DIRECTORY_SEPARATOR . 'config.defaults.php');
     }
 
     private static function include(string $path): array
