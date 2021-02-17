@@ -102,4 +102,10 @@ class Configuration
         }, $schema, $configuration);
     }
 
+    public static function default(mixed $defaultValue): callable
+    {
+        return static function (mixed $value) use ($defaultValue): mixed {
+            return $value ?? $defaultValue;
+        };
+    }
 }

@@ -39,7 +39,9 @@ Resource loader for logger
 use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
 
-$configuration = $validate([]); 
+$configuration = $validate([
+    "channel" => \rikmeijer\Bootstrap\Configuration::default("myChannel")
+]); 
 
 return static function(string $level, string $message) use ($configuration) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);

@@ -107,8 +107,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createConfig('config.default', ["resource" => ["status" => $value]]);
-        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('resource', '<?php $configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) { return (object)["status" => $configuration["status"]]; };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
