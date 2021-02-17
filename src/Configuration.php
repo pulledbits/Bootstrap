@@ -115,7 +115,7 @@ class Configuration
     {
         return static function (mixed $value, array $context) use ($defaultValue): mixed {
             if ($value === null) {
-                return Path::join($context['configuration-path'], $defaultValue);
+                $value = $defaultValue;
             }
             if (Path::isRelative($value)) {
                 return Path::join($context['configuration-path'], $value);
