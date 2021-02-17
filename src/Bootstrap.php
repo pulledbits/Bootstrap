@@ -13,7 +13,9 @@ final class Bootstrap
 
     public static function resourcesPath(callable $config): string
     {
-        $configuration = $config('BOOTSTRAP', ['path' => ['url', ['default' => '%configuration-path%' . DIRECTORY_SEPARATOR . 'bootstrap']]]);
+        $configuration = $config('BOOTSTRAP', ['path' => static function (?string $value, array $context): string {
+            return $value ?? ($context['configuration-path'] . DIRECTORY_SEPARATOR . 'bootstrap');
+        }]);
         return $configuration['path'];
     }
 }

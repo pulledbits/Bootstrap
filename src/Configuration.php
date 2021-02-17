@@ -70,7 +70,7 @@ class Configuration
         if (array_key_exists($section, self::$configs[$root]) === false) {
             self::$configs[$root][$section] = [];
         }
-        return self::validate($schema, self::$configs[$root][$section], ['%configuration-path%' => $root]);
+        return self::validate($schema, self::$configs[$root][$section], ['configuration-path' => $root]);
     }
 
     private static function openDefaults(string $root): array
@@ -97,21 +97,9 @@ class Configuration
         if (count($schema) === 0) {
             return $configuration;
         }
-        return array_map_assoc(function (array $schemaProperty, mixed $configurationProperty) use ($context) {
-            return call_user_func([__CLASS__, $schemaProperty[0]], $schemaProperty[1], $configurationProperty, $context);
+        return array_map_assoc(function (callable $validator, mixed $value) use ($context) {
+            return $validator($value, $context);
         }, $schema, $configuration);
-    }
-
-    /** @noinspection PhpUnusedPrivateMethodInspection */
-    private static function url(array $schemaProperty, mixed $configurationProperty, array $context): mixed
-    {
-        if ($configurationProperty !== null) {
-            return $configurationProperty;
-        }
-        if (array_key_exists('default', $schemaProperty)) {
-            return str_replace(array_keys($context), array_values($context), $schemaProperty['default']);
-        }
-        return null;
     }
 
 }
