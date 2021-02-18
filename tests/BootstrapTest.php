@@ -31,6 +31,9 @@ final class BootstrapTest extends TestCase
 
     private function createResource(string $resourceName, string $content): void
     {
+        if (str_contains($resourceName, '/')) {
+            mkdir(dirname($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName), 0777, true);
+        }
         file_put_contents($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
@@ -165,6 +168,20 @@ final class BootstrapTest extends TestCase
         self::assertEquals($value, $bootstrap('resource-dependent2')->status);
     }
 
+
+    public function testWhen_AccessingResourceOnParentLevel_Expect_Unavailable(): void
+    {
+        $value = uniqid('', true);
+
+        $this->createResource('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+
+        $this->createResource('resource/dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("dependency2"); ' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertNull($bootstrap('resource/dependent2'));
+    }
+
     public function testResourceCache(): void
     {
         $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
@@ -202,11 +219,20 @@ final class BootstrapTest extends TestCase
 
         @unlink($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'resource.php');
 
-        foreach (glob($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . '*.php') as $tmpFile) {
-            @unlink($tmpFile);
-        }
-        @rmdir($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
+        $this->deleteDirRecursively($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
 
         @rmdir($this->getResourcesRoot());
+    }
+
+    private function deleteDirRecursively(string $dir): void
+    {
+        foreach (glob($dir . DIRECTORY_SEPARATOR . '*') as $tmpFile) {
+            if (is_file($tmpFile)) {
+                @unlink($tmpFile);
+            } elseif (is_dir($tmpFile)) {
+                $this->deleteDirRecursively($tmpFile);
+            }
+        }
+        @rmdir($dir);
     }
 }

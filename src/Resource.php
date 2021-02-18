@@ -12,7 +12,17 @@ class Resource
                 $validate = function (array $schema) use ($identifier, $config) {
                     return $config($identifier, $schema);
                 };
-                $resourcesCache[$identifier] = self::require(Bootstrap::resourcesPath($config) . DIRECTORY_SEPARATOR . $identifier . '.php', $validate, Resource::loader($config));
+                $resourcesCache[$identifier] = self::require(Bootstrap::resourcesPath($config) . DIRECTORY_SEPARATOR . $identifier . '.php', $validate, function (string $otherIdentifier, mixed ...$args) use ($identifier, $config): mixed {
+                    if (str_starts_with($otherIdentifier, $identifier)) {
+                        return Resource::loader($config)($otherIdentifier, ...$args);
+                    }
+
+                    if (substr_count($otherIdentifier, '/') === substr_count($identifier, '/')) {
+                        return Resource::loader($config)($otherIdentifier, ...$args);
+                    }
+
+                    return null;
+                });
             }
             return $resourcesCache[$identifier](...$args);
         };
