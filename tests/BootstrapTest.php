@@ -182,6 +182,34 @@ final class BootstrapTest extends TestCase
         self::assertNull($bootstrap('resource/dependent2'));
     }
 
+
+    public function testWhen_AccessingResourceOnChildLevel_Expect_Available(): void
+    {
+        $value = uniqid('', true);
+
+        $this->createResource('dependent2/dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+
+        $this->createResource('dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("dependent2/dependency2"); ' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertEquals($value, $bootstrap('dependent2')->status);
+    }
+
+
+    public function testWhen_AccessingResourceOnCousingLevel_Expect_Unavailable(): void
+    {
+        $value = uniqid('', true);
+
+        $this->createResource('someotherresource/dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+
+        $this->createResource('dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("someotherresource/dependency2"); ' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+
+        self::assertNull($bootstrap('dependent2'));
+    }
+
     public function testResourceCache(): void
     {
         $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
