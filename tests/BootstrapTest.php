@@ -14,7 +14,7 @@ final class BootstrapTest extends TestCase
     public function testConfig_DefaultOption(): void
     {
         $value = uniqid('', true);
-        $this->createResource('resource', '<?php $configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
 
         // Act
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
@@ -40,7 +40,7 @@ final class BootstrapTest extends TestCase
         $value2 = uniqid('', true);
 
         $this->createConfig('config', ["resource-custom" => ["option" => $value2]]);
-        $this->createResource('resource-custom', '<?php $configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) { return (object)["option" => $configuration["option"]]; };');
+        $this->createResource('resource-custom', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
         self::assertEquals($value2, $bootstrap('resource-custom')->option);
@@ -51,7 +51,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
-        $this->createResource('resource', '<?php $configuration = $validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) { return (object)["option" => $configuration["option1"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -60,7 +60,7 @@ final class BootstrapTest extends TestCase
 
     public function testResource(): void
     {
-        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -69,7 +69,8 @@ final class BootstrapTest extends TestCase
 
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
     {
-        $this->createResource('resource', '<?php $configuration = $validate([]); return function(string $extratext) use ($configuration) { return (object)["status" => "Yes!" . $extratext]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) { ' . PHP_EOL . '   return (object)["status" => "Yes!" . $extratext]; 
+            };');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -78,7 +79,7 @@ final class BootstrapTest extends TestCase
 
     public function testResourceWithoutTypehintForConfig(): void
     {
-        $this->createResource('resource', '<?php $configuration = $validate([]); return function() use ($configuration) { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -89,7 +90,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createResource('resource', '<?php $configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -99,7 +100,7 @@ final class BootstrapTest extends TestCase
 
     public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
     {
-        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -108,7 +109,7 @@ final class BootstrapTest extends TestCase
 
     public function testWhenConfigurationMissingPatheWihtSubdirs_ExpectJoinedAbsolutePath(): void
     {
-        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -118,7 +119,7 @@ final class BootstrapTest extends TestCase
     public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
     {
         $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
-        $this->createResource('resource', '<?php $configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); return function() use ($configuration) { return (object)["status" => $configuration["path"]]; };');
+        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -129,11 +130,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency', '<?php $configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent', '<?php
-        return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency")->status]; 
-        };');
+        $this->createResource('resource-dependent', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency")->status]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -144,11 +143,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency', '<?php $configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function(string $extratext) use ($configuration) : object { return (object)["status" => $configuration["status"] . $extratext]; };');
+        $this->createResource('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent', '<?php
-        return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; 
-        };');
+        $this->createResource('resource-dependent', '<?php' . PHP_EOL . 'return function() use ($bootstrap) {' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -159,11 +156,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency2', '<?php $configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); return function() use ($configuration) : object { return (object)["status" => $configuration["status"]]; };');
+        $this->createResource('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent2', '<?php
-        return function() use ($bootstrap) { return (object)["status" => $bootstrap("dependency2")->status]; 
-        };');
+        $this->createResource('resource-dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency2")->status]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
 
@@ -172,12 +167,12 @@ final class BootstrapTest extends TestCase
 
     public function testResourceCache(): void
     {
-        $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "Yes!"]; };');
+        $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
         $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
         self::assertEquals('Yes!', $bootstrap('resource-cache')->status);
 
-        $this->createResource('resource-cache', '<?php return function() { return (object)["status" => "No!"];};');
+        $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "No!"];' . PHP_EOL . '};');
         self::assertNotInstanceOf(Closure::class, $bootstrap('resource-cache'));
         self::assertEquals('Yes!', $bootstrap('resource-cache')->status);
 
