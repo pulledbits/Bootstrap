@@ -21,8 +21,10 @@ class PHP
         }
 
         $returnType = '';
+        $void = null;
         if ($closureReflection->getReturnType() !== null) {
             $returnType = ' : ' . self::export($closureReflection->getReturnType());
+            $void = $returnType === ' : void';
         }
 
         $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
@@ -31,7 +33,7 @@ class PHP
                     if (isset($closure) === false) {
                         $closure = ' . $code . '
                     }
-                    return $closure(...func_get_args());
+                    ' . ($void === true ? '' : 'return ') . '$closure(...func_get_args());
                 } } }';
     }
 

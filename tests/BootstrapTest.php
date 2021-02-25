@@ -91,6 +91,18 @@ final class BootstrapTest extends TestCase
         self::assertFalse(function_exists($this->getFQFN('resourceFunc')));
     }
 
+    public function testWhen_VoidCalled_Expect_FunctionNotReturning(): void
+    {
+        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
+        $this->createFunction('resourceFuncVoid', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) : void {' . PHP_EOL . ' ' . PHP_EOL . '};');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        Bootstrap::initialize($this->getConfigurationRoot());
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $f = '\\rikmeijer\\Bootstrap\\f\\resourceFuncVoid';
+        self::assertNull($f(...$args));
+    }
+
     public function testWhen_Called_Expect_FunctionAvailableAsFunction(): void
     {
         $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
