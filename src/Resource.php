@@ -6,15 +6,15 @@ use Webmozart\PathUtil\Path;
 
 class Resource
 {
-    public static function loader(string $configurationPath, array $bootstrapConfig): callable
+    public static function loader(string $configurationPath, string $resourcesPath, string $functionsNS): callable
     {
-        $loader = static function (string $identifier) use ($configurationPath, $bootstrapConfig): string {
-            return '\\' . self::class . '::require(' . PHP::export(Path::join($bootstrapConfig['path'], $identifier . '.php')) . ', \\' . self::class . '::loader(' . PHP::export($configurationPath) . ', ' . PHP::export($bootstrapConfig) . '), static function(array $schema) {
+        $loader = static function (string $identifier) use ($configurationPath, $resourcesPath, $functionsNS): string {
+            return '\\' . self::class . '::require(' . PHP::export(Path::join($resourcesPath, $identifier . '.php')) . ', \\' . self::class . '::loader(' . PHP::export($configurationPath) . ', ' . PHP::export($resourcesPath) . ', ' . PHP::export($functionsNS) . '), static function(array $schema) {
                             return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($identifier) . ', $schema);
                         });';
         };
-        return static function (string $identifier, mixed ...$args) use ($bootstrapConfig, $loader): mixed {
-            $function = $bootstrapConfig['namespace'] . '\\' . $identifier;
+        return static function (string $identifier, mixed ...$args) use ($functionsNS, $loader): mixed {
+            $function = $functionsNS . '\\' . $identifier;
             if (function_exists($function) === false) {
                 eval(PHP::wrapResource($function, $loader($identifier)));
             }

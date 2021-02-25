@@ -9,4 +9,5 @@ final class Bootstrap
         $configuration = Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\f\\' . basename($configurationPath))]);
         return Resource::loader($configurationPath, $configuration['path'], $configuration['namespace']);
     }
+
 }
