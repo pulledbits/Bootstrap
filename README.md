@@ -4,6 +4,8 @@ Bootstrap Closure for loading resources and configuration
 
 ## Usage
 
+Run vendor\bin\bootstrap to generate functions (configure file in config.php).
+
 ### /bootstrap.php
 
 ```php
@@ -12,7 +14,7 @@ use rikmeijer\Bootstrap\Bootstrap;
 
 // include composer autoloader
 require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-return Bootstrap::initialize(__DIR__); // argument is configuration-path
+Bootstrap::initialize(__DIR__); // argument is configuration-path
 ```
 
 ### /config.php
@@ -27,7 +29,9 @@ return [
         'channel' => 'OurApp'
     ],
     'BOOTSTRAP' => [
-        'path' => __DIR__ . DIRECTORY_SEPARATOR . 'bootstrap' // optional: default is directory bootstrap under configuration-path
+        'path' => CONFIGURATION_PATH . DIRECTORY_SEPARATOR . 'bootstrap' // optional: default is directory bootstrap under configuration-path
+        'namespace' => __NAMESPACE__ . '\\' . basename(getcwd()), // eg rikmeijer\Bootstrap\myProject
+        'functions-path' => CONFIGURATION_PATH . DIRECTORY_SEPARATOR . '_f.php'
     ]
 ];
 ```
@@ -71,14 +75,15 @@ use Psr\Log\LoggerInterface;
 use \rikmeijer\Bootstrap\Dependency;
 
 return static function() use ($bootstrap) : LoggerInterface {
-    $bootstrap('logger', 'emergency', "Houston, we have a problem.");
+    rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
 };
 ```
 
 ### /public/index.php
+
 ```php
 <?php /** @noinspection ALL */
 
-$bootstrap = require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
-$logger = $bootstrap('logger');
+require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
+rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
 ```

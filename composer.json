@@ -17,6 +17,6 @@
     }
   },
   "bin": [
-    "bin/bootstrap.php"
+    "bootstrap"
   ]
 }
