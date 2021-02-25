@@ -20,7 +20,19 @@ final class Bootstrap
     public static function generate(string $configurationPath): void
     {
         $config = self::configuration($configurationPath);
-        file_put_contents($config['functions-path'], '<?php' . PHP_EOL);
-        Resource::generate($config['path'], $configurationPath);
+        $resourcesNS = $config['namespace'];
+        $fp = fopen($config['functions-path'], 'wb');
+        fwrite($fp, '<?php' . PHP_EOL);
+        Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($configurationPath, $resourcesNS, $fp) {
+            if ($resourceNSPath !== '') {
+                $resourceNS = $resourcesNS . '\\' . $resourceNSPath;
+            } else {
+                $resourceNS = $resourcesNS;
+            }
+            fwrite($fp, PHP::wrapResource($resourceNS, basename($resourcePath, '.php'), '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ', static function(array $schema) {
+                            return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);
+                        });' . PHP_EOL));
+        });
+        fclose($fp);
     }
 }

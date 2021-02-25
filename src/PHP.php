@@ -12,7 +12,7 @@ use ReflectionUnionType;
 
 class PHP
 {
-    public static function wrapResource(string $fqfn, string $code): string
+    public static function wrapResource(string $namespace, string $function, string $code): string
     {
         try {
             $closureReflection = new ReflectionFunction(eval('return ' . $code));
@@ -25,13 +25,7 @@ class PHP
             $returnType = ' : ' . self::export($closureReflection->getReturnType());
         }
 
-        $positionLastNSSeparator = strrpos($fqfn, '\\');
-        $namespace = '';
-        if ($positionLastNSSeparator !== false) {
-            $namespace .= substr($fqfn, 0, $positionLastNSSeparator);
-            $function = substr($fqfn, $positionLastNSSeparator + 1);
-        }
-
+        $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
         return 'namespace ' . $namespace . ' { if (function_exists(' . self::export($fqfn) . ') === false) {  function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {
                     static $closure;
                     if (isset($closure) === false) {
