@@ -32,13 +32,13 @@ class PHP
             $function = substr($fqfn, $positionLastNSSeparator + 1);
         }
 
-        return 'namespace ' . $namespace . ' { function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {
+        return 'namespace ' . $namespace . ' { if (function_exists(' . self::export($fqfn) . ') === false) {  function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {
                     static $closure;
                     if (isset($closure) === false) {
                         $closure = ' . $code . '
                     }
                     return $closure(...func_get_args());
-                } }';
+                } } }';
     }
 
     public static function export(mixed $variable): string
