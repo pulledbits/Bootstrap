@@ -12,9 +12,8 @@ use ReflectionUnionType;
 
 class PHP
 {
-    public static function wrapResource(string $fqfn, callable $loadCode): string
+    public static function wrapResource(string $fqfn, string $code): string
     {
-        $code = $loadCode() . ';';
         try {
             $closureReflection = new ReflectionFunction(eval('return ' . $code));
         } catch (ReflectionException $e) {
