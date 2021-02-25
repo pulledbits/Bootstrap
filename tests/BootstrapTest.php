@@ -229,7 +229,7 @@ final class BootstrapTest extends TestCase
 
         $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '()->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
@@ -243,7 +243,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
-        $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return function() use ($bootstrap) {' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return function() {' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '("Hello World!")->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
@@ -258,7 +258,7 @@ final class BootstrapTest extends TestCase
 
         $this->createFunction('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency2")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency2') . '()->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
