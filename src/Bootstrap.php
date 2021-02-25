@@ -4,15 +4,13 @@ namespace rikmeijer\Bootstrap;
 
 final class Bootstrap
 {
-    public static function initialize(string $configurationPath): callable
+    public static function initialize(string $configurationPath): void
     {
         $config = self::configuration($configurationPath);
         if (file_exists($config['functions-path'])) {
-            require_once $config['functions-path'];
+            require $config['functions-path'];
         }
-        return Resource::loader($configurationPath);
     }
-
 
     public static function configuration(string $configurationPath): array
     {
