@@ -4,6 +4,7 @@ namespace rikmeijer\Bootstrap\tests;
 
 use Closure;
 use PHPUnit\Framework\TestCase;
+use ReflectionFunction;
 use rikmeijer\Bootstrap\Bootstrap;
 use Webmozart\PathUtil\Path;
 
@@ -14,13 +15,13 @@ final class BootstrapTest extends TestCase
     public function testConfig_DefaultOption(): void
     {
         $value = uniqid('', true);
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
 
         // Act
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
         self::assertEquals($value, $bootstrap('resource')->option);
 
-        $this->streams['config'] = fopen($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
+        $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
 
     private function createConfig(string $streamID, array $config): void
@@ -29,12 +30,12 @@ final class BootstrapTest extends TestCase
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
     }
 
-    private function createResource(string $resourceName, string $content): void
+    private function createFunction(string $resourceName, string $content): void
     {
         if (str_contains($resourceName, '/')) {
-            mkdir(dirname($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName), 0777, true);
+            mkdir(dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName), 0777, true);
         }
-        file_put_contents($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
+        file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
     public function testConfig_CustomOption(): void
@@ -42,11 +43,11 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
         $value2 = uniqid('', true);
 
-        $this->createConfig('config', ["resource-custom" => ["option" => $value2]]);
-        $this->createResource('resource-custom', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
+        $this->createConfig('config', ["resourceCustom" => ["option" => $value2]]);
+        $this->createFunction('resourceCustom', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
-        self::assertEquals($value2, $bootstrap('resource-custom')->option);
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
+        self::assertEquals($value2, $bootstrap('resourceCustom')->option);
     }
 
     public function testConfig_CustomOption_RecursiveMerge(): void
@@ -54,37 +55,50 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
 
         $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
         self::assertEquals($value, $bootstrap('resource')->option);
     }
 
     public function testResource(): void
     {
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
         self::assertEquals('Yes!', $bootstrap('resource')->status);
     }
 
+    public function testWhen_Called_Expect_FunctionAvailableAsStaticMethod(): void
+    {
+        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
+        $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $bootstrap('resourceFunc', ...$args);
+        $f = '\\rikmeijer\\Bootstrap\\f\\resourceFunc';
+        self::assertEquals('Yes!', $f(...$args)->status);
+    }
+
+
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
     {
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) { ' . PHP_EOL . '   return (object)["status" => "Yes!" . $extratext]; 
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) { ' . PHP_EOL . '   return (object)["status" => "Yes!" . $extratext]; 
             };');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
         self::assertEquals('Yes!Hello World', $bootstrap('resource', 'Hello World')->status);
     }
 
     public function testResourceWithoutTypehintForConfig(): void
     {
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
         self::assertEquals('Yes!', $bootstrap('resource')->status);
     }
@@ -93,9 +107,9 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
         self::assertEquals($value, $bootstrap('resource')->status);
     }
@@ -103,153 +117,111 @@ final class BootstrapTest extends TestCase
 
     public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
     {
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getResourcesRoot(), 'somedir'), $bootstrap('resource')->status);
+        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somedir'), $bootstrap('resource')->status);
     }
 
-    public function testWhenConfigurationMissingPatheWihtSubdirs_ExpectJoinedAbsolutePath(): void
+    public function testWhenConfigurationMissingPatheWithSubdirs_ExpectJoinedAbsolutePath(): void
     {
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getResourcesRoot(), 'somedir', 'somesubdir'), $bootstrap('resource')->status);
+        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir'), $bootstrap('resource')->status);
     }
 
     public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
     {
         $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
-        $this->createResource('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getResourcesRoot(), 'somefolder'), $bootstrap('resource')->status);
+        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somefolder'), $bootstrap('resource')->status);
     }
 
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency")->status]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals($value, $bootstrap('resource-dependent')->status);
+        self::assertEquals($value, $bootstrap('resourceDependent')->status);
     }
 
     public function testWhenResourceDependentOfOtherResourceWithExtraArguments_Expect_ExtraParametersAvailableInDependency(): void
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent', '<?php' . PHP_EOL . 'return function() use ($bootstrap) {' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return function() use ($bootstrap) {' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency", "Hello World!")->status]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals($value . 'Hello World!', $bootstrap('resource-dependent')->status);
+        self::assertEquals($value . 'Hello World!', $bootstrap('resourceDependent')->status);
     }
 
     public function testWhenNoConfigurationIsRequired_ExpectOnlyDependenciesInjectedByBootstrap(): void
     {
         $value = uniqid('', true);
 
-        $this->createResource('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
-        $this->createResource('resource-dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency2")->status]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return (object)["status" => $bootstrap("dependency2")->status]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals($value, $bootstrap('resource-dependent2')->status);
-    }
-
-
-    public function testWhen_AccessingResourceOnParentLevel_Expect_Unavailable(): void
-    {
-        $value = uniqid('', true);
-
-        $this->createResource('dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
-
-        $this->createResource('resource/dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("dependency2"); ' . PHP_EOL . '};');
-
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
-
-        self::assertNull($bootstrap('resource/dependent2'));
-    }
-
-
-    public function testWhen_AccessingResourceOnChildLevel_Expect_Available(): void
-    {
-        $value = uniqid('', true);
-
-        $this->createResource('dependent2/dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
-
-        $this->createResource('dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("dependent2/dependency2"); ' . PHP_EOL . '};');
-
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
-
-        self::assertEquals($value, $bootstrap('dependent2')->status);
-    }
-
-
-    public function testWhen_AccessingResourceOnCousingLevel_Expect_Unavailable(): void
-    {
-        $value = uniqid('', true);
-
-        $this->createResource('someotherresource/dependency2', '<?php ' . PHP_EOL . '$configuration = $validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
-
-        $this->createResource('dependent2', '<?php ' . PHP_EOL . 'return function() use ($bootstrap) { ' . PHP_EOL . '   return $bootstrap("someotherresource/dependency2"); ' . PHP_EOL . '};');
-
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
-
-        self::assertNull($bootstrap('dependent2'));
+        self::assertEquals($value, $bootstrap('resourceDependent2')->status);
     }
 
     public function testResourceCache(): void
     {
-        $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
+        $this->createFunction('resourceCache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
-        $bootstrap = Bootstrap::initialize($this->getResourcesRoot());
-        self::assertEquals('Yes!', $bootstrap('resource-cache')->status);
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
+        self::assertEquals('Yes!', $bootstrap('resourceCache')->status);
 
-        $this->createResource('resource-cache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "No!"];' . PHP_EOL . '};');
-        self::assertNotInstanceOf(Closure::class, $bootstrap('resource-cache'));
-        self::assertEquals('Yes!', $bootstrap('resource-cache')->status);
+        $this->createFunction('resourceCache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "No!"];' . PHP_EOL . '};');
+        self::assertNotInstanceOf(Closure::class, $bootstrap('resourceCache'));
+        self::assertEquals('Yes!', $bootstrap('resourceCache')->status);
 
     }
 
-    private function getResourcesRoot(): string
+    private function getConfigurationRoot(): string
     {
         return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getName();
     }
 
     protected function setUp(): void
     {
-        if (!@mkdir($this->getResourcesRoot()) && !is_dir($this->getResourcesRoot())) {
-            trigger_error("Unable to create " . $this->getResourcesRoot());
+        if (!@mkdir($this->getConfigurationRoot()) && !is_dir($this->getConfigurationRoot())) {
+            trigger_error("Unable to create " . $this->getConfigurationRoot());
         }
-        $this->streams['config'] = fopen($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
+        $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
 
-        if (is_dir($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap') === false) {
-            mkdir($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
+        if (is_dir($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap') === false) {
+            mkdir($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
         }
     }
 
     protected function tearDown(): void
     {
         fclose($this->streams['config']);
-        @unlink($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'config.php');
+        @unlink($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php');
 
-        @unlink($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'resource.php');
+        @unlink($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'resource.php');
 
-        $this->deleteDirRecursively($this->getResourcesRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
+        $this->deleteDirRecursively($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
 
-        @rmdir($this->getResourcesRoot());
+        @rmdir($this->getConfigurationRoot());
     }
 
     private function deleteDirRecursively(string $dir): void

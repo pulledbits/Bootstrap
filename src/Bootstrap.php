@@ -6,16 +6,7 @@ final class Bootstrap
 {
     public static function initialize(string $configurationPath): callable
     {
-        return Resource::loader(static function (string $section, array $schema) use ($configurationPath) {
-            return Configuration::open($configurationPath, $section, $schema);
-        });
-    }
-
-    public static function resourcesPath(callable $config): string
-    {
-        $configuration = $config('BOOTSTRAP', ['path' => static function (?string $value, array $context): string {
-            return $value ?? ($context['configuration-path'] . DIRECTORY_SEPARATOR . 'bootstrap');
-        }]);
-        return $configuration['path'];
+        $configuration = Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\f\\' . basename($configurationPath))]);
+        return Resource::loader($configurationPath, $configuration['path'], $configuration['namespace']);
     }
 }

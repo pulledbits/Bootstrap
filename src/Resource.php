@@ -2,41 +2,37 @@
 
 namespace rikmeijer\Bootstrap;
 
+use Webmozart\PathUtil\Path;
+
 class Resource
 {
-    public static function loader(callable $config): callable
+    public static function loader(string $configurationPath, string $resourcesPath, string $functionsNS): callable
     {
-        $resourcesCache = [];
-        return static function (string $identifier, mixed ...$args) use ($config, &$resourcesCache): mixed {
-            if (array_key_exists($identifier, $resourcesCache) === false) {
-                $validate = function (array $schema) use ($identifier, $config) {
-                    return $config($identifier, $schema);
-                };
-                $resourcesCache[$identifier] = self::require(Bootstrap::resourcesPath($config) . DIRECTORY_SEPARATOR . $identifier . '.php', $validate, function (string $otherIdentifier, mixed ...$args) use ($identifier, $config): mixed {
-                    if (str_starts_with($otherIdentifier, $identifier)) {
-                        return Resource::loader($config)($otherIdentifier, ...$args);
-                    }
-
-                    if (substr_count($otherIdentifier, '/') === substr_count($identifier, '/')) {
-                        return Resource::loader($config)($otherIdentifier, ...$args);
-                    }
-
-                    return null;
-                });
+        $loader = static function (string $identifier) use ($configurationPath, $resourcesPath, $functionsNS): string {
+            return '\\' . self::class . '::require(' . PHP::export(Path::join($resourcesPath, $identifier . '.php')) . ', \\' . self::class . '::loader(' . PHP::export($configurationPath) . ', ' . PHP::export($resourcesPath) . ', ' . PHP::export($functionsNS) . '), static function(array $schema) {
+                            return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($identifier) . ', $schema);
+                        })';
+        };
+        return static function (string $identifier, mixed ...$args) use ($functionsNS, $loader): mixed {
+            $function = $functionsNS . '\\' . $identifier;
+            if (function_exists($function) === false) {
+                eval(PHP::wrapResource($function, function () use ($loader, $identifier): string {
+                    return $loader($identifier);
+                }));
             }
-            return $resourcesCache[$identifier](...$args);
+            return $function(...$args);
         };
     }
 
     /**
      * The purpose of the method is shielding other variables from the included script
      * @param string $path
-     * @param callable $validate
      * @param callable $bootstrap
+     * @param callable $validate
      * @return mixed
      * @noinspection PhpIncludeInspection PhpUnusedParameterInspection
      */
-    private static function require(string $path, callable $validate, callable $bootstrap): callable
+    public static function require(string $path, callable $bootstrap, callable $validate): callable
     {
         return (require $path);
     }
