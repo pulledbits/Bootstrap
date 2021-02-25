@@ -16,7 +16,7 @@ class Resource
         };
         return static function (string $identifier, mixed ...$args) use ($configurationPath, $loader): mixed {
             $config = Bootstrap::configuration($configurationPath);
-            $function = $config['namespace'] . '\\' . $identifier;
+            $function = $config['namespace'] . '\\' . str_replace('/', '\\', $identifier);
             if (function_exists($function) === false) {
                 eval(PHP::wrapResource($function, $loader($identifier)));
             }

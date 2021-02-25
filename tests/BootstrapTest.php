@@ -32,8 +32,9 @@ final class BootstrapTest extends TestCase
 
     private function createFunction(string $resourceName, string $content): void
     {
+        $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
         if (str_contains($resourceName, '/')) {
-            mkdir(dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName), 0777, true);
+            is_dir($directory) || mkdir($directory, 0777, true);
         }
         file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
@@ -71,7 +72,7 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $bootstrap('resource')->status);
     }
 
-    public function testWhen_Called_Expect_FunctionAvailableAsStaticMethod(): void
+    public function testWhen_Called_Expect_FunctionAvailableAsFunction(): void
     {
         $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
@@ -80,6 +81,30 @@ final class BootstrapTest extends TestCase
         $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
         $bootstrap('resourceFunc', ...$args);
         $f = '\\rikmeijer\\Bootstrap\\f\\resourceFunc';
+        self::assertEquals('Yes!', $f(...$args)->status);
+    }
+
+    public function testWhen_Called_Expect_FunctionAvailableAsFunctionUnderNS(): void
+    {
+        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
+        $this->createFunction('test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $bootstrap('test/resourceFunc', ...$args);
+        $f = '\\rikmeijer\\Bootstrap\\f\\test\\resourceFunc';
+        self::assertEquals('Yes!', $f(...$args)->status);
+    }
+
+    public function testWhen_CalledDeeper_Expect_FunctionAvailableAsFunctionUnderNS(): void
+    {
+        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
+        $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        $bootstrap = Bootstrap::initialize($this->getConfigurationRoot());
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $bootstrap('test/test/resourceFunc', ...$args);
+        $f = '\\rikmeijer\\Bootstrap\\f\\test\\test\\resourceFunc';
         self::assertEquals('Yes!', $f(...$args)->status);
     }
 
