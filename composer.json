@@ -13,7 +13,10 @@
   "autoload": {
     "psr-4": {
       "rikmeijer\\Bootstrap\\": "src",
-      "rikmeijer\\Bootstrap\\tests\\" : "tests"
+      "rikmeijer\\Bootstrap\\tests\\": "tests"
     }
-  }
+  },
+  "bin": [
+    "bin/bootstrap.php"
+  ]
 }
