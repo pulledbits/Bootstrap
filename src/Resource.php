@@ -8,16 +8,15 @@ class Resource
 {
     public static function loader(string $configurationPath): callable
     {
-        $config = Bootstrap::configuration($configurationPath);
-        $resourcesPath = $config['path'];
-        $functionsNS = $config['namespace'];
-        $loader = static function (string $identifier) use ($configurationPath, $resourcesPath, $functionsNS): string {
-            return '\\' . self::class . '::require(' . PHP::export(Path::join($resourcesPath, $identifier . '.php')) . ', \\' . self::class . '::loader(' . PHP::export($configurationPath) . ', ' . PHP::export($resourcesPath) . ', ' . PHP::export($functionsNS) . '), static function(array $schema) {
+        $loader = static function (string $identifier) use ($configurationPath): string {
+            $config = Bootstrap::configuration($configurationPath);
+            return '\\' . self::class . '::require(' . PHP::export(Path::join($config['path'], $identifier . '.php')) . ', \\' . self::class . '::loader(' . PHP::export($configurationPath) . '), static function(array $schema) {
                             return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($identifier) . ', $schema);
                         });';
         };
-        return static function (string $identifier, mixed ...$args) use ($functionsNS, $loader): mixed {
-            $function = $functionsNS . '\\' . $identifier;
+        return static function (string $identifier, mixed ...$args) use ($configurationPath, $loader): mixed {
+            $config = Bootstrap::configuration($configurationPath);
+            $function = $config['namespace'] . '\\' . $identifier;
             if (function_exists($function) === false) {
                 eval(PHP::wrapResource($function, $loader($identifier)));
             }
