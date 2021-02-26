@@ -33,7 +33,7 @@ final class Bootstrap
             }
             fwrite($fp, PHP::wrapResource($resourceNS, basename($resourcePath, '.php'), '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ', static function(array $schema) {
                             return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);
-                        });' . PHP_EOL));
+                        })'));
         });
         fclose($fp);
     }

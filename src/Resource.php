@@ -4,6 +4,9 @@ namespace rikmeijer\Bootstrap;
 
 class Resource
 {
+
+    private static $cache = [];
+
     /**
      * The purpose of the method is shielding other variables from the included script
      * @param string $path
@@ -13,7 +16,10 @@ class Resource
      */
     public static function require(string $path, callable $validate): callable
     {
-        return (require $path);
+        if (array_key_exists($path, self::$cache) === false) {
+            self::$cache[$path] = (require $path);
+        }
+        return self::$cache[$path];
     }
 
     public static function generate(string $resourcesPath, string $resourceNSPath, callable $writer): void

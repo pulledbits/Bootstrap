@@ -15,7 +15,7 @@ class PHP
     public static function wrapResource(string $namespace, string $function, string $code): string
     {
         try {
-            $closureReflection = new ReflectionFunction(eval('return ' . $code));
+            $closureReflection = new ReflectionFunction(eval(sprintf("return %s;", $code)));
         } catch (ReflectionException $e) {
             trigger_error($e->getMessage(), E_USER_ERROR);
         }
@@ -28,7 +28,7 @@ class PHP
         }
 
         $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
-        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {' . PHP_EOL . '            static $closure;' . PHP_EOL . '            if (isset($closure) === false) {' . PHP_EOL . '                $closure = ' . $code . PHP_EOL . '            }' . PHP_EOL . '        ' . ($void === true ? '' : 'return ') . '$closure(...func_get_args());' . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
+        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {' . PHP_EOL . '            ' . ($void === true ? '' : 'return ') . $code . '(...func_get_args());' . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string
