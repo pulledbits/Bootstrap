@@ -83,6 +83,17 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $f()->status);
     }
 
+    public function testWhen_UsingConfiguration_Expect_DedicatedValidateFunctionAvailable(): void
+    {
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        Bootstrap::initialize($this->getConfigurationRoot());
+
+        $f = $this->getFQFN('resource');
+        self::assertEquals('Yes!', $f()->status);
+    }
+
     public function testWhen_FunctionsFileMissing_Expect_FunctionsNotExistingButNoError(): void
     {
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');

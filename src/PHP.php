@@ -4,31 +4,17 @@
 namespace rikmeijer\Bootstrap;
 
 
-use ReflectionException;
-use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
 
 class PHP
 {
-    public static function wrapResource(string $namespace, string $function, string $code): string
+    public static function function (string $namespace, string $function, array $parameters, string $returnType, string $code): string
     {
-        try {
-            $closureReflection = new ReflectionFunction(eval(sprintf("return %s;", $code)));
-        } catch (ReflectionException $e) {
-            trigger_error($e->getMessage(), E_USER_ERROR);
-        }
-
-        $returnType = '';
-        $void = null;
-        if ($closureReflection->getReturnType() !== null) {
-            $returnType = ' : ' . self::export($closureReflection->getReturnType());
-            $void = $returnType === ' : void';
-        }
-
+        $void = str_ends_with($returnType, 'void');
         $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
-        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {' . PHP_EOL . '            ' . ($void === true ? '' : 'return ') . $code . '(...func_get_args());' . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
+        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . implode(', ', $parameters) . ') ' . $returnType . ' {' . PHP_EOL . '            ' . ($void === true ? '' : 'return ') . $code . '(...func_get_args());' . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string

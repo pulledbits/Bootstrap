@@ -2,6 +2,9 @@
 
 namespace rikmeijer\Bootstrap;
 
+use ReflectionException;
+use ReflectionFunction;
+
 final class Bootstrap
 {
     public static function initialize(string $configurationPath): void
@@ -31,9 +34,23 @@ final class Bootstrap
             } else {
                 $resourceNS = $resourcesNS;
             }
-            fwrite($fp, PHP::wrapResource($resourceNS, basename($resourcePath, '.php'), '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ', static function(array $schema) {
+
+            $code = '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ', static function(array $schema) {
                             return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);
-                        })'));
+                        })';
+
+            try {
+                $closureReflection = new ReflectionFunction(eval(sprintf("return %s;", $code)));
+            } catch (ReflectionException $e) {
+                trigger_error($e->getMessage(), E_USER_ERROR);
+            }
+            $returnType = '';
+            $void = null;
+            if ($closureReflection->getReturnType() !== null) {
+                $returnType = ' : ' . PHP::export($closureReflection->getReturnType());
+            }
+
+            fwrite($fp, PHP::function($resourceNS, basename($resourcePath, '.php'), array_map([PHP::class, 'export'], $closureReflection->getParameters()), $returnType, $code));
         });
         fclose($fp);
     }
