@@ -15,14 +15,15 @@ final class BootstrapTest extends TestCase
     public function testConfig_DefaultOption(): void
     {
         $value = uniqid('', true);
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . '$configuration = $validate(["option" => \\rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
 
         // Act
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
 
-        $f = $this->getFQFN('resource');
+        $f = 'my\own\ns\resource';
         self::assertEquals($value, $f()->option);
+
 
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }

@@ -24,7 +24,10 @@ final class Bootstrap
         $fp = fopen($config['functions-path'], 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($configurationPath, $resourcesNS, $fp) {
-            if ($resourceNSPath !== '') {
+            $contents = file_get_contents($resourcePath);
+            if (preg_match('/namespace (?<namespace>((\w+)\\\\?)+);/m', $contents, $matches) === 1) {
+                $resourceNS = $matches['namespace'];
+            } elseif ($resourceNSPath !== '') {
                 $resourceNS = $resourcesNS . '\\' . $resourceNSPath;
             } else {
                 $resourceNS = $resourcesNS;
