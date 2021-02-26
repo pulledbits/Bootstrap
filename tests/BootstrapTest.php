@@ -119,22 +119,22 @@ final class BootstrapTest extends TestCase
     public function testWhen_Called_Expect_FunctionAvailableAsFunctionUnderNS(): void
     {
         $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
-        $this->createFunction('test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4 = 0) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
         $f = '\\rikmeijer\\Bootstrap\\f\\test\\resourceFunc';
         self::assertEquals('Yes!', $f(...$args)->status);
     }
 
     public function testWhen_CalledDeeper_Expect_FunctionAvailableAsFunctionUnderNS(): void
     {
-        $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, string $arg4 = "") use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
         $f = '\\rikmeijer\\Bootstrap\\testWhen_CalledDeeper_Expect_FunctionAvailableAsFunctionUnderNS\\test\\test\\resourceFunc';
         self::assertEquals('Yes!', $f(...$args)->status);
     }

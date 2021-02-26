@@ -43,7 +43,16 @@ class PHP
                 $typeHint .= '?';
             }
             $typeHint .= self::export($type);
-            return $typeHint . ' $' . $variable->getName();
+
+            if ($variable->isDefaultValueAvailable() === false) {
+                $default = '';
+            } elseif ($variable->isDefaultValueConstant()) {
+                $default = ' = ' . $variable->getDefaultValueConstantName();
+            } else {
+                $default = ' = ' . self::export($variable->getDefaultValue());
+            }
+
+            return $typeHint . ' $' . $variable->getName() . $default;
         }
 
         if ($variable instanceof ReflectionUnionType) {
