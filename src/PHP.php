@@ -28,13 +28,7 @@ class PHP
         }
 
         $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
-        return 'namespace ' . $namespace . ' { if (function_exists(' . self::export($fqfn) . ') === false) {  function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {
-                    static $closure;
-                    if (isset($closure) === false) {
-                        $closure = ' . $code . '
-                    }
-                    ' . ($void === true ? '' : 'return ') . '$closure(...func_get_args());
-                } } }';
+        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . implode(', ', array_map([self::class, 'export'], $closureReflection->getParameters())) . ') ' . $returnType . ' {' . PHP_EOL . '            static $closure;' . PHP_EOL . '            if (isset($closure) === false) {' . PHP_EOL . '                $closure = ' . $code . PHP_EOL . '            }' . PHP_EOL . '        ' . ($void === true ? '' : 'return ') . '$closure(...func_get_args());' . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string
