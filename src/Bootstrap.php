@@ -48,7 +48,7 @@ final class Bootstrap
 
             $identifier = basename($resourcePath, '.php');
             fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . $identifier) . ', $schema);'));
-            fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, ($void === true ? '' : 'return ') . '(\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ')(...func_get_args()));'));
+            fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
         });
         fclose($fp);
     }
