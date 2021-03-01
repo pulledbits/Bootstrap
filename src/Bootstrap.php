@@ -12,10 +12,12 @@ final class Bootstrap
         Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($config, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
+            $configSection = '';
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
             } elseif ($resourceNSPath !== '') {
                 $resourceNS = $config['namespace'] . '\\' . $resourceNSPath;
+                $configSection = str_replace('\\', '/', $resourceNSPath) . '/';
             } else {
                 $resourceNS = $config['namespace'];
             }
@@ -33,7 +35,8 @@ final class Bootstrap
             }
 
             $identifier = basename($resourcePath, '.php');
-            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(__DIR__, ' . PHP::export($resourceNSPath . $identifier) . ', $schema);'));
+            $configSection .= $identifier;
+            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(__DIR__, ' . PHP::export($configSection) . ', $schema);'));
             fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
         });
         fclose($fp);

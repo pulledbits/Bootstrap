@@ -161,10 +161,10 @@ final class BootstrapTest extends TestCase
         $f1 = '\\rikmeijer\\Bootstrap\\f\\test\\resourceFunc';
         $f2 = '\\rikmeijer\\Bootstrap\\f\\test\\test\\resourceFunc';
 
-        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
+        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f'], 'test/test/resourceFunc' => ['status' => 'Yesss!']]);
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f0 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
         $this->createFunction('test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f1 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-        $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f2 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f2 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
 
@@ -175,7 +175,7 @@ final class BootstrapTest extends TestCase
 
         self::assertEquals('Yes!', $f0(...$args)->status);
         self::assertEquals('Yes!', $f1(...$args)->status);
-        self::assertEquals('Yes!', $f2(...$args)->status);
+        self::assertEquals('Yesss!', $f2(...$args)->status);
     }
 
 
