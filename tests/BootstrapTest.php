@@ -22,7 +22,7 @@ final class BootstrapTest extends TestCase
 
         // Act
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals($value, $f()->option);
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
@@ -53,7 +53,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceCustom', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals($value2, $f()->option);
     }
@@ -67,7 +67,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals($value, $f()->option);
     }
@@ -78,7 +78,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals('Yes!', $f()->status);
     }
@@ -89,7 +89,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php namespace my\ns;' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals('Yes!', $f()->status);
     }
@@ -99,7 +99,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('resourceFunc') . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         $this->expectError();
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         self::assertFalse(function_exists($this->getFQFN('resourceFunc')));
     }
 
@@ -111,7 +111,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceFuncVoid', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) : void {' . PHP_EOL . ' ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
         self::assertNull($f(...$args));
     }
@@ -124,7 +124,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
@@ -137,7 +137,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4 = 0) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
@@ -149,7 +149,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('test/test/resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, string $arg4 = "") use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
@@ -170,7 +170,7 @@ final class BootstrapTest extends TestCase
 
         self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
 
         self::assertEquals('Yes!', $f0(...$args)->status);
@@ -186,7 +186,7 @@ final class BootstrapTest extends TestCase
             };');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals('Yes!Hello World', $f('Hello World')->status);
     }
@@ -197,7 +197,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate([]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals('Yes!', $f()->status);
     }
@@ -210,7 +210,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals($value, $f()->status);
     }
@@ -223,7 +223,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir')), fileinode($f()->status));
     }
@@ -235,7 +235,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir')), fileinode($f()->status));
     }
@@ -248,7 +248,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somefolder')), fileinode($f()->status));
     }
@@ -262,7 +262,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '()->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         $f = $this->getFQFN('resourceDependent');
         self::assertEquals($value, $f()->status);
@@ -276,7 +276,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return function() {' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '("Hello World!")->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         $f = $this->getFQFN('resourceDependent');
         self::assertEquals($value . 'Hello World!', $f()->status);
@@ -291,7 +291,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency2') . '()->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
 
         $f = $this->getFQFN('resourceDependent2');
         self::assertEquals($value, $f()->status);
@@ -302,7 +302,7 @@ final class BootstrapTest extends TestCase
         $this->createFunction('resourceCache', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => "Yes!"]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+        $this->activateBootstrap();
         $f = $this->getFQFN('resourceCache');
         self::assertEquals('Yes!', $f()->status);
 
@@ -310,6 +310,11 @@ final class BootstrapTest extends TestCase
         self::assertNotInstanceOf(Closure::class, $f());
         self::assertEquals('Yes!', $f()->status);
 
+    }
+
+    private function activateBootstrap(): void
+    {
+        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
     }
 
     private function getFQFN(string $function): string
