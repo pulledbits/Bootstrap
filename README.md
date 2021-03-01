@@ -6,17 +6,6 @@ Bootstrap Closure for loading resources and configuration
 
 Run vendor\bin\bootstrap to generate functions (configure file in config.php).
 
-### /bootstrap.php
-
-```php
-<?php /** @noinspection ALL */
-use rikmeijer\Bootstrap\Bootstrap;
-
-// include composer autoloader
-require __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-Bootstrap::initialize(__DIR__); // argument is configuration-path
-```
-
 ### /config.php
 
 Configuration options: /config.php (can be gitignored and used for sensitive data), defaults can be set as arguments in
@@ -86,6 +75,8 @@ return static function() : LoggerInterface {
 ```php
 <?php /** @noinspection ALL */
 
+// include composer autoloader
+require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
 rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
 my\custom\namespace\loggerDependant();
