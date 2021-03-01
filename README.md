@@ -46,11 +46,11 @@ Resource loader for logger
 use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
 
-$configuration = $validate([
-    "channel" => \rikmeijer\Bootstrap\Configuration::default("MyApp")
-]); 
+return static function(string $level, string $message) : LoggerInterface {
+    $configuration = \rikmeijer\Bootstrap\myProject\logger\validate([
+        "channel" => \rikmeijer\Bootstrap\Configuration::default("MyApp")
+    ]); 
 
-return static function(string $level, string $message) use ($configuration) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new SyslogHandler("debug"));
     switch ($level) {
