@@ -97,6 +97,7 @@ final class BootstrapTest extends TestCase
     {
         $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('resourceFunc') . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
+        $this->expectError();
         Bootstrap::initialize($this->getConfigurationRoot());
         self::assertFalse(function_exists($this->getFQFN('resourceFunc')));
     }

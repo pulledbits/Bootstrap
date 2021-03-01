@@ -13,18 +13,17 @@ final class Bootstrap
     public static function generate(string $configurationPath): void
     {
         $config = Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
-        $resourcesNS = $config['namespace'];
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.f.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($configurationPath, $resourcesNS, $fp) {
+        Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($config, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
             } elseif ($resourceNSPath !== '') {
-                $resourceNS = $resourcesNS . '\\' . $resourceNSPath;
+                $resourceNS = $config['namespace'] . '\\' . $resourceNSPath;
             } else {
-                $resourceNS = $resourcesNS;
+                $resourceNS = $config['namespace'];
             }
 
             $parameters = '';
