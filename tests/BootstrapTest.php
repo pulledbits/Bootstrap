@@ -85,12 +85,12 @@ final class BootstrapTest extends TestCase
 
     public function testWhen_UsingConfiguration_Expect_DedicatedValidateFunctionAvailable(): void
     {
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = $validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php namespace my\ns;' . PHP_EOL . '$configuration = resource\\validate([]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
 
-        $f = $this->getFQFN('resource');
+        $f = 'my\\ns\\resource';
         self::assertEquals('Yes!', $f()->status);
     }
 
