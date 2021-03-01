@@ -62,7 +62,7 @@ return static function(string $level, string $message) use ($configuration) : Lo
 };
 ```
 
-### /bootstrap/logger-dependant.php
+### /bootstrap/loggerDependant.php
 
 Other resource dependant of the logger resource, dependencies are automatically injected based on given (named)
 attributes. Use of $configuration or $bootstrap is optional. Additional parameters can be passed to $bootstrap as
@@ -71,10 +71,12 @@ arguments
 ```php
 <?php /** @noinspection ALL */
 
+namespace my\custom\namespace;
+
 use Psr\Log\LoggerInterface;
 use \rikmeijer\Bootstrap\Dependency;
 
-return static function() use ($bootstrap) : LoggerInterface {
+return static function() : LoggerInterface {
     rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
 };
 ```
@@ -86,4 +88,5 @@ return static function() use ($bootstrap) : LoggerInterface {
 
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
 rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
+my\custom\namespace\loggerDependant();
 ```
