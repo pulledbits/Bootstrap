@@ -17,9 +17,12 @@ final class Bootstrap
                 $resourceNS = $context['namespace'];
             } elseif ($resourceNSPath !== '') {
                 $resourceNS = $config['namespace'] . '\\' . $resourceNSPath;
-                $configSection = str_replace('\\', '/', $resourceNSPath) . '/';
             } else {
                 $resourceNS = $config['namespace'];
+            }
+
+            if ($resourceNSPath !== '') {
+                $configSection = str_replace('\\', '/', $resourceNSPath) . '/';
             }
 
             $parameters = '';

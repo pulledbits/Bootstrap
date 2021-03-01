@@ -178,6 +178,29 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yesss!', $f2(...$args)->status);
     }
 
+    public function testWhen_ResourcesAreGeneratedWithinNS_Expect_ResourceConfigsAvailableAsFunctions(): void
+    {
+        $f0 = '\\rikmeijer\\Bootstrap\\f2\\resourceFunc';
+        $f1 = '\\rikmeijer\\Bootstrap\\f2\\test\\resourceFunc';
+        $f2 = '\\rikmeijer\\Bootstrap\\f2\\test\\test\\resourceFunc';
+
+        $this->createConfig('config', ['test/test/resourceFunc' => ['status' => 'Yesss!']]);
+        $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; ' . PHP_EOL . '$configuration = ' . $f0 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; ' . PHP_EOL . '$configuration = ' . $f1 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; ' . PHP_EOL . '$configuration = ' . $f2 . '\\validate([]); ' . PHP_EOL . 'return function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) use ($configuration) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '};');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+
+        self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
+
+        $this->activateBootstrap();
+        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+
+        self::assertEquals('Yes!', $f0(...$args)->status);
+        self::assertEquals('Yes!', $f1(...$args)->status);
+        self::assertEquals('Yesss!', $f2(...$args)->status);
+    }
+
 
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
     {
