@@ -7,21 +7,21 @@ final class Bootstrap
     public static function initialize(string $configurationPath): void
     {
         $config = self::configuration($configurationPath);
-        if (file_exists($config['functions-path'])) {
-            require $config['functions-path'];
+        if (file_exists($configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'])) {
+            require $configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'];
         }
     }
 
     public static function configuration(string $configurationPath): array
     {
-        return Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'functions-path' => Configuration::path('_f.php'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
+        return Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'functions-filename' => Configuration::default('_f.php'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
     }
 
     public static function generate(string $configurationPath): void
     {
         $config = self::configuration($configurationPath);
         $resourcesNS = $config['namespace'];
-        $fp = fopen($config['functions-path'], 'wb');
+        $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'], 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($configurationPath, $resourcesNS, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
@@ -47,7 +47,7 @@ final class Bootstrap
             }
 
             $identifier = basename($resourcePath, '.php');
-            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . $identifier) . ', $schema);'));
+            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(__DIR__, ' . PHP::export($resourceNSPath . $identifier) . ', $schema);'));
             fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
         });
         fclose($fp);

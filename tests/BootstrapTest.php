@@ -216,28 +216,31 @@ final class BootstrapTest extends TestCase
 
     public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
     {
+        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
         $f = $this->getFQFN('resource');
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somedir'), $f()->status);
+        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir')), fileinode($f()->status));
     }
 
     public function testWhenConfigurationMissingPatheWithSubdirs_ExpectJoinedAbsolutePath(): void
     {
+        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir'));
         $f = $this->getFQFN('resource');
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir'), $f()->status);
+        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir')), fileinode($f()->status));
     }
 
     public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
     {
+        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somefolder'));
         $f = $this->getFQFN('resource');
         $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
         $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
@@ -245,7 +248,7 @@ final class BootstrapTest extends TestCase
         Bootstrap::generate($this->getConfigurationRoot());
         Bootstrap::initialize($this->getConfigurationRoot());
 
-        self::assertEquals(Path::join($this->getConfigurationRoot(), 'somefolder'), $f()->status);
+        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somefolder')), fileinode($f()->status));
     }
 
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void
@@ -319,26 +322,28 @@ final class BootstrapTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!@mkdir($this->getConfigurationRoot()) && !is_dir($this->getConfigurationRoot())) {
-            trigger_error("Unable to create " . $this->getConfigurationRoot());
-        }
+        $this->mkdir(Path::join($this->getConfigurationRoot()));
+        $this->mkdir(Path::join($this->getConfigurationRoot(), 'bootstrap'));
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
+    }
 
-        if (is_dir($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap') === false) {
-            mkdir($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
+    private array $createdDirectories = [];
+
+    private function mkdir(string $path): void
+    {
+        if (!mkdir($path, recursive: true) && !is_dir($path)) {
+            trigger_error("Unable to create " . $this->getConfigurationRoot());
+        } else {
+            $this->createdDirectories[] = $path;
         }
     }
 
     protected function tearDown(): void
     {
         fclose($this->streams['config']);
-        @unlink($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php');
-
-        @unlink($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'resource.php');
-
-        $this->deleteDirRecursively($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap');
-
-        @rmdir($this->getConfigurationRoot());
+        foreach (array_reverse($this->createdDirectories) as $createdDirectory) {
+            $this->deleteDirRecursively($createdDirectory);
+        }
     }
 
     private function deleteDirRecursively(string $dir): void
