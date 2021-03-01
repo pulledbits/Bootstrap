@@ -10,11 +10,9 @@ class Resource
     /**
      * The purpose of the method is shielding other variables from the included script
      * @param string $path
-     * @param callable $validate
      * @return mixed
-     * @noinspection PhpIncludeInspection PhpUnusedParameterInspection
      */
-    public static function require(string $path, callable $validate): callable
+    public static function require(string $path): callable
     {
         if (array_key_exists($path, self::$cache) === false) {
             self::$cache[$path] = (require $path);

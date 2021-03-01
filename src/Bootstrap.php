@@ -44,11 +44,8 @@ final class Bootstrap
                 $returnType = $context['returnType'];
             }
 
-            $configCode = '\\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);';
-            fwrite($fp, PHP::function($resourceNS . '\\' . basename($resourcePath, '.php'), 'validate', 'array $schema', ': array', $configCode));
-            fwrite($fp, PHP::function($resourceNS, basename($resourcePath, '.php'), $parameters, $returnType, '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ', static function(array $schema) {
-                            return ' . $configCode . '
-                        })(...func_get_args());'));
+            fwrite($fp, PHP::function($resourceNS . '\\' . basename($resourcePath, '.php'), 'validate', 'array $schema', ': array', '\\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);'));
+            fwrite($fp, PHP::function($resourceNS, basename($resourcePath, '.php'), $parameters, $returnType, '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ')(...func_get_args());'));
         });
         fclose($fp);
     }
