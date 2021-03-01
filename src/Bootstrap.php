@@ -40,12 +40,15 @@ final class Bootstrap
             }
 
             $returnType = '';
+            $void = false;
             if (array_key_exists('returnType', $context)) {
                 $returnType = $context['returnType'];
+                $void = str_contains($returnType, 'void') === false;
             }
 
-            fwrite($fp, PHP::function($resourceNS . '\\' . basename($resourcePath, '.php'), 'validate', 'array $schema', ': array', '\\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . basename($resourcePath, '.php')) . ', $schema);'));
-            fwrite($fp, PHP::function($resourceNS, basename($resourcePath, '.php'), $parameters, $returnType, '\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ')(...func_get_args());'));
+            $identifier = basename($resourcePath, '.php');
+            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(' . PHP::export($configurationPath) . ', ' . PHP::export($resourceNSPath . $identifier) . ', $schema);'));
+            fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, ($void === true ? '' : 'return ') . '(\\' . Resource::class . '::require(' . PHP::export($resourcePath) . ')(...func_get_args()));'));
         });
         fclose($fp);
     }
