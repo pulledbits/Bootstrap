@@ -4,24 +4,17 @@ namespace rikmeijer\Bootstrap;
 
 final class Bootstrap
 {
+    /** @noinspection PhpIncludeInspection */
     public static function initialize(string $configurationPath): void
     {
-        $config = self::configuration($configurationPath);
-        if (file_exists($configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'])) {
-            require $configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'];
-        }
-    }
-
-    public static function configuration(string $configurationPath): array
-    {
-        return Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'functions-filename' => Configuration::default('_f.php'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
+        require $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.f.php';
     }
 
     public static function generate(string $configurationPath): void
     {
-        $config = self::configuration($configurationPath);
+        $config = Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
         $resourcesNS = $config['namespace'];
-        $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . $config['functions-filename'], 'wb');
+        $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.f.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($configurationPath, $resourcesNS, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);

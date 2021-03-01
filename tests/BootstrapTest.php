@@ -166,7 +166,7 @@ final class BootstrapTest extends TestCase
 
         Bootstrap::generate($this->getConfigurationRoot());
 
-        self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . '_f.php');
+        self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.f.php');
 
         Bootstrap::initialize($this->getConfigurationRoot());
         $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
