@@ -64,15 +64,15 @@ class Configuration
 {
     private static array $configs = [];
 
-    public static function open(string $root, string $section, array $schema): array
+    public static function open(string $root, string $section): array
     {
         if (array_key_exists($root, self::$configs) === false) {
-            self::$configs[$root] = array_merge_recursive_distinct([$section => []], self::openLocal($root));
+            self::$configs[$root] = array_merge_recursive_distinct([$section => []], self::include($root . DIRECTORY_SEPARATOR . 'config.php'));
         }
         if (array_key_exists($section, self::$configs[$root]) === false) {
             self::$configs[$root][$section] = [];
         }
-        return self::validate($schema, self::$configs[$root][$section], ['configuration-path' => $root]);
+        return self::$configs[$root][$section];
     }
 
     private static function include(string $path): array
@@ -84,12 +84,7 @@ class Configuration
         return is_array($config) ? $config : [];
     }
 
-    private static function openLocal(string $root): array
-    {
-        return self::include($root . DIRECTORY_SEPARATOR . 'config.php');
-    }
-
-    private static function validate(array $schema, array $configuration, array $context): array
+    public static function validate(array $schema, array $configuration, array $context): array
     {
         if (count($schema) === 0) {
             return $configuration;

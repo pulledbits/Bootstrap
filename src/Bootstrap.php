@@ -6,7 +6,9 @@ final class Bootstrap
 {
     public static function generate(string $configurationPath): void
     {
-        $config = Configuration::open($configurationPath, 'BOOTSTRAP', ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))]);
+        $schema = ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))];
+        $config = Configuration::validate($schema, Configuration::open($configurationPath, 'BOOTSTRAP'), ['configuration-path' => $configurationPath]);
+
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate($config['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($config, $fp) {
@@ -39,7 +41,7 @@ final class Bootstrap
 
             $identifier = basename($resourcePath, '.php');
             $configSection .= $identifier;
-            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::open(__DIR__, ' . PHP::export($configSection) . ', $schema);'));
+            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::validate($schema, \\' . Configuration::class . '::open(__DIR__, ' . PHP::export($configSection) . '), ["configuration-path" => __DIR__]);'));
             fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
         });
         fclose($fp);
