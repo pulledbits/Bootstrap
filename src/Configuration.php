@@ -64,15 +64,12 @@ class Configuration
 {
     private static array $configs = [];
 
-    public static function open(string $root, string $section): array
+    public static function open(string $root): array
     {
         if (array_key_exists($root, self::$configs) === false) {
-            self::$configs[$root] = array_merge_recursive_distinct([$section => []], self::include($root . DIRECTORY_SEPARATOR . 'config.php'));
+            self::$configs[$root] = self::include($root . DIRECTORY_SEPARATOR . 'config.php');
         }
-        if (array_key_exists($section, self::$configs[$root]) === false) {
-            self::$configs[$root][$section] = [];
-        }
-        return self::$configs[$root][$section];
+        return self::$configs[$root];
     }
 
     private static function include(string $path): array
