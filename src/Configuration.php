@@ -66,19 +66,19 @@ class Configuration
 
     public static function open(string $root): array
     {
-        if (array_key_exists($root, self::$configs) === false) {
-            self::$configs[$root] = self::include($root . DIRECTORY_SEPARATOR . 'config.php');
+        if (array_key_exists($root, self::$configs)) {
+            return self::$configs[$root];
+        }
+
+        $path = $root . DIRECTORY_SEPARATOR . 'config.php';
+        if (file_exists($path) === false) {
+            self::$configs[$root] = [];
+        } else {
+            /** @noinspection PhpIncludeInspection */
+            $config = (include $path);
+            self::$configs[$root] = is_array($config) ? $config : [];
         }
         return self::$configs[$root];
-    }
-
-    private static function include(string $path): array
-    {
-        if (file_exists($path) === false) {
-            return [];
-        }
-        $config = (include $path);
-        return is_array($config) ? $config : [];
     }
 
     public static function validate(array $schema, array $configuration, array $context): array
