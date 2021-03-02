@@ -8,7 +8,7 @@ final class Bootstrap
     {
         $schema = ['path' => Configuration::path('bootstrap'), 'namespace' => Configuration::default(__NAMESPACE__ . '\\' . basename($configurationPath))];
         $configuration = Configuration::open($configurationPath);
-        $bootstrapConfig = Configuration::validate($schema, array_key_exists('BOOTSTRAP', $configuration) ? $configuration['BOOTSTRAP'] : [], ['configuration-path' => $configurationPath]);
+        $bootstrapConfig = Configuration::validate($schema, $configuration('BOOTSTRAP'), ['configuration-path' => $configurationPath]);
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
@@ -42,13 +42,7 @@ final class Bootstrap
 
             $identifier = basename($resourcePath, '.php');
             $configSection .= $identifier;
-
-            $sectionConfiguration = [];
-            if (array_key_exists($configSection, $configuration)) {
-                $sectionConfiguration = $configuration[$configSection];
-            }
-
-            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::validate($schema, ' . PHP::export($sectionConfiguration) . ', ["configuration-path" => __DIR__]);'));
+            fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::validate($schema, ' . PHP::export($configuration($configSection)) . ', ["configuration-path" => __DIR__]);'));
             fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
         });
         fclose($fp);

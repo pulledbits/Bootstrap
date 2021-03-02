@@ -62,23 +62,27 @@ function array_map_assoc(callable $callback, array $array, array ...$arrays): ar
 
 class Configuration
 {
-    private static array $configs = [];
-
-    public static function open(string $root): array
+    public static function open(string $root): callable
     {
-        if (array_key_exists($root, self::$configs)) {
-            return self::$configs[$root];
-        }
-
         $path = $root . DIRECTORY_SEPARATOR . 'config.php';
-        if (file_exists($path) === false) {
-            self::$configs[$root] = [];
-        } else {
-            /** @noinspection PhpIncludeInspection */
-            $config = (include $path);
-            self::$configs[$root] = is_array($config) ? $config : [];
-        }
-        return self::$configs[$root];
+        return static function (string $section) use ($path) {
+            static $config;
+            if (isset($config) === false) {
+                if (file_exists($path) === false) {
+                    $config = [];
+                } else {
+                    /** @noinspection PhpIncludeInspection */
+                    $config = (include $path);
+                    if (!is_array($config)) {
+                        $config = [];
+                    }
+                }
+            }
+            if (array_key_exists($section, $config) === false) {
+                return [];
+            }
+            return is_array($config[$section]) ? $config[$section] : [];
+        };
     }
 
     public static function validate(array $schema, array $configuration, array $context): array
