@@ -361,7 +361,7 @@ final class BootstrapTest extends TestCase
 
     private function mkdir(string $path): void
     {
-        if (!mkdir($path, recursive: true) && !is_dir($path)) {
+        if (!is_dir($path) && !mkdir($path, recursive: true)) {
             trigger_error("Unable to create " . $this->getConfigurationRoot());
         } else {
             $this->createdDirectories[] = $path;

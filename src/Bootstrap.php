@@ -12,7 +12,7 @@ final class Bootstrap
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate($bootstrapConfig['path'], '', static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
+        Resource::generate([$bootstrapConfig['path']], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
