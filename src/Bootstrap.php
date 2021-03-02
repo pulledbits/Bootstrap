@@ -42,9 +42,14 @@ final class Bootstrap
 
             $identifier = basename($resourcePath, '.php');
             $configSection .= $identifier;
+            fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . '\\' . $identifier . ' { ');
             fwrite($fp, PHP::function($resourceNS . '\\' . $identifier, 'validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::validate($schema, ' . PHP::export($configuration($configSection)) . ', ["configuration-path" => __DIR__]);'));
+            fwrite($fp, '}' . PHP_EOL);
+            fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             fwrite($fp, PHP::function($resourceNS, $identifier, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
+            fwrite($fp, '}' . PHP_EOL);
         });
         fclose($fp);
     }
+
 }

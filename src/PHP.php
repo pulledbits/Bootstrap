@@ -13,7 +13,7 @@ class PHP
     public static function function (string $namespace, string $function, string $parameters, string $returnType, string $code): string
     {
         $fqfn = $namespace . '\\' . str_replace('/', '\\', $function);
-        return PHP_EOL . 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . $parameters . ') ' . $returnType . ' {' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL . '}' . PHP_EOL;
+        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . $function . ' (' . $parameters . ') ' . $returnType . ' {' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string
