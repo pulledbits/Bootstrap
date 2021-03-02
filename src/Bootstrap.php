@@ -44,7 +44,8 @@ final class Bootstrap
             $fqfn = $resourceNS . '\\' . $identifier;
             $configSection .= $identifier;
             fwrite($fp, PHP_EOL . 'namespace ' . $fqfn . ' { ');
-            fwrite($fp, PHP::function($fqfn . '\\validate', 'array $schema', ': array', 'return \\' . Configuration::class . '::validate($schema, ' . PHP::export($configuration($configSection)) . ', ["configuration-path" => __DIR__]);'));
+            fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
+            fwrite($fp, PHP::function($fqfn . '\\validate', 'array $schema', ': array', 'return Configuration::validate($schema, ' . PHP::export($configuration($configSection)) . ', ["configuration-path" => __DIR__]);'));
             fwrite($fp, '}' . PHP_EOL);
             fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             fwrite($fp, PHP::function($fqfn, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
