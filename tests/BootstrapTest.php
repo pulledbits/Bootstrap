@@ -15,16 +15,25 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_DefaultOption(): void
     {
-        $value = uniqid('', true);
         $f = '\\my\\own\\ns\\resource';
 
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . '$configuration = ' . $f . '\\validate([
+            "optionBoolean" => ' . $this->getFQFN('configuration\\boolean') . '(true),
+            "optionInteger" => ' . $this->getFQFN('configuration\\integer') . '(1),
+            "optionFloat" => ' . $this->getFQFN('configuration\\float') . '(3.14),
+            "optionString" => ' . $this->getFQFN('configuration\\string') . '("text"),
+            "optionArray" => ' . $this->getFQFN('configuration\\arr') . '(["some", "value"])
+            ]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '};');
 
         // Act
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertEquals($value, $f()->option);
+        self::assertTrue($f()->configuration["optionBoolean"]);
+        self::assertEquals(1, $f()->configuration["optionInteger"]);
+        self::assertEquals(3.14, $f()->configuration["optionFloat"]);
+        self::assertEquals("text", $f()->configuration["optionString"]);
+        self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
 
