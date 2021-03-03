@@ -2,6 +2,7 @@
 
 namespace rikmeijer\Bootstrap;
 
+use Functional as F;
 use Webmozart\PathUtil\Path;
 
 /**
@@ -97,21 +98,21 @@ class Configuration
 
     public static function default(mixed $defaultValue): callable
     {
-        return static function (mixed $value) use ($defaultValue): mixed {
+        return F\partial_left(static function (mixed $defaultValue, mixed $value): mixed {
             return $value ?? $defaultValue;
-        };
+        }, $defaultValue);
     }
 
     public static function path(string ...$defaultValue): callable
     {
-        return static function (mixed $value, array $context) use ($defaultValue): mixed {
+        return F\partial_left(static function (string $defaultValue, mixed $value, array $context): mixed {
             if ($value === null) {
-                $value = Path::join(...$defaultValue);
+                $value = $defaultValue;
             }
             if (Path::isRelative($value)) {
                 return Path::join($context['configuration-path'], $value);
             }
             return $value;
-        };
+        }, Path::join(...$defaultValue));
     }
 }

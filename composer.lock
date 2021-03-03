@@ -4,8 +4,156 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "9a6aaba2d2d6a27b0b3a35b9d3771745",
+  "content-hash": "72af1b507483e0416b0f3a6462f0bce5",
   "packages": [
+    {
+      "name": "lstrojny/functional-php",
+      "version": "1.15.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/lstrojny/functional-php.git",
+        "reference": "07940820f52820292c83419937d5c331a4ec2fb3"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/lstrojny/functional-php/zipball/07940820f52820292c83419937d5c331a4ec2fb3",
+        "reference": "07940820f52820292c83419937d5c331a4ec2fb3",
+        "shasum": ""
+      },
+      "require": {
+        "php": "~7|~8"
+      },
+      "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.14",
+        "phpunit/phpunit": "~7",
+        "squizlabs/php_codesniffer": "~3.0"
+      },
+      "type": "library",
+      "autoload": {
+        "psr-4": {
+          "Functional\\": "src/Functional"
+        },
+        "files": [
+          "src/Functional/Ary.php",
+          "src/Functional/Average.php",
+          "src/Functional/ButLast.php",
+          "src/Functional/Capture.php",
+          "src/Functional/ConstFunction.php",
+          "src/Functional/CompareOn.php",
+          "src/Functional/CompareObjectHashOn.php",
+          "src/Functional/Compose.php",
+          "src/Functional/Concat.php",
+          "src/Functional/Contains.php",
+          "src/Functional/Converge.php",
+          "src/Functional/Curry.php",
+          "src/Functional/CurryN.php",
+          "src/Functional/Difference.php",
+          "src/Functional/DropFirst.php",
+          "src/Functional/DropLast.php",
+          "src/Functional/Each.php",
+          "src/Functional/Equal.php",
+          "src/Functional/ErrorToException.php",
+          "src/Functional/Every.php",
+          "src/Functional/False.php",
+          "src/Functional/Falsy.php",
+          "src/Functional/Filter.php",
+          "src/Functional/First.php",
+          "src/Functional/FirstIndexOf.php",
+          "src/Functional/FlatMap.php",
+          "src/Functional/Flatten.php",
+          "src/Functional/Flip.php",
+          "src/Functional/GreaterThan.php",
+          "src/Functional/GreaterThanOrEqual.php",
+          "src/Functional/Group.php",
+          "src/Functional/Head.php",
+          "src/Functional/Id.php",
+          "src/Functional/IfElse.php",
+          "src/Functional/Identical.php",
+          "src/Functional/IndexesOf.php",
+          "src/Functional/Intersperse.php",
+          "src/Functional/Invoke.php",
+          "src/Functional/InvokeFirst.php",
+          "src/Functional/InvokeIf.php",
+          "src/Functional/InvokeLast.php",
+          "src/Functional/Invoker.php",
+          "src/Functional/Last.php",
+          "src/Functional/LastIndexOf.php",
+          "src/Functional/LessThan.php",
+          "src/Functional/LessThanOrEqual.php",
+          "src/Functional/LexicographicCompare.php",
+          "src/Functional/Map.php",
+          "src/Functional/Matching.php",
+          "src/Functional/Maximum.php",
+          "src/Functional/Memoize.php",
+          "src/Functional/Minimum.php",
+          "src/Functional/None.php",
+          "src/Functional/Noop.php",
+          "src/Functional/Not.php",
+          "src/Functional/OmitKeys.php",
+          "src/Functional/PartialAny.php",
+          "src/Functional/PartialLeft.php",
+          "src/Functional/PartialMethod.php",
+          "src/Functional/PartialRight.php",
+          "src/Functional/Partition.php",
+          "src/Functional/Pick.php",
+          "src/Functional/Pluck.php",
+          "src/Functional/Poll.php",
+          "src/Functional/Product.php",
+          "src/Functional/Ratio.php",
+          "src/Functional/ReduceLeft.php",
+          "src/Functional/ReduceRight.php",
+          "src/Functional/Reindex.php",
+          "src/Functional/Reject.php",
+          "src/Functional/Repeat.php",
+          "src/Functional/Retry.php",
+          "src/Functional/Select.php",
+          "src/Functional/SelectKeys.php",
+          "src/Functional/SequenceConstant.php",
+          "src/Functional/SequenceExponential.php",
+          "src/Functional/SequenceLinear.php",
+          "src/Functional/Some.php",
+          "src/Functional/Sort.php",
+          "src/Functional/Sum.php",
+          "src/Functional/SuppressError.php",
+          "src/Functional/Tap.php",
+          "src/Functional/Tail.php",
+          "src/Functional/TailRecursion.php",
+          "src/Functional/TakeLeft.php",
+          "src/Functional/TakeRight.php",
+          "src/Functional/True.php",
+          "src/Functional/Truthy.php",
+          "src/Functional/Unique.php",
+          "src/Functional/ValueToKey.php",
+          "src/Functional/With.php",
+          "src/Functional/Zip.php",
+          "src/Functional/ZipAll.php"
+        ]
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "MIT"
+      ],
+      "authors": [
+        {
+          "name": "Lars Strojny",
+          "email": "lstrojny@php.net",
+          "homepage": "https://usrportage.de"
+        },
+        {
+          "name": "Max Beutel",
+          "email": "nash12@gmail.com"
+        }
+      ],
+      "description": "Functional primitives for PHP",
+      "keywords": [
+        "functional"
+      ],
+      "support": {
+        "issues": "https://github.com/lstrojny/functional-php/issues",
+        "source": "https://github.com/lstrojny/functional-php/tree/1.15.0"
+      },
+      "time": "2020-12-22T07:53:25+00:00"
+    },
     {
       "name": "symfony/polyfill-ctype",
       "version": "v1.22.1",
@@ -435,16 +583,16 @@
     },
     {
       "name": "phar-io/version",
-      "version": "3.0.4",
+      "version": "3.1.0",
       "source": {
         "type": "git",
         "url": "https://github.com/phar-io/version.git",
-        "reference": "e4782611070e50613683d2b9a57730e9a3ba5451"
+        "reference": "bae7c545bef187884426f042434e561ab1ddb182"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/phar-io/version/zipball/e4782611070e50613683d2b9a57730e9a3ba5451",
-        "reference": "e4782611070e50613683d2b9a57730e9a3ba5451",
+        "url": "https://api.github.com/repos/phar-io/version/zipball/bae7c545bef187884426f042434e561ab1ddb182",
+        "reference": "bae7c545bef187884426f042434e561ab1ddb182",
         "shasum": ""
       },
       "require": {
@@ -480,9 +628,9 @@
       "description": "Library for handling version information and constraints",
       "support": {
         "issues": "https://github.com/phar-io/version/issues",
-        "source": "https://github.com/phar-io/version/tree/3.0.4"
+        "source": "https://github.com/phar-io/version/tree/3.1.0"
       },
-      "time": "2020-12-13T23:18:30+00:00"
+      "time": "2021-02-23T14:00:09+00:00"
     },
     {
       "name": "phpdocumentor/reflection-common",
@@ -2145,14 +2293,14 @@
       "time": "2020-07-12T23:59:07+00:00"
     }
   ],
-    "aliases": [],
-    "minimum-stability": "stable",
-    "stability-flags": [],
-    "prefer-stable": false,
-    "prefer-lowest": false,
-    "platform": {
-      "php": "^8.0"
-    },
-    "platform-dev": [],
+  "aliases": [],
+  "minimum-stability": "stable",
+  "stability-flags": [],
+  "prefer-stable": false,
+  "prefer-lowest": false,
+  "platform": {
+    "php": "^8.0"
+  },
+  "platform-dev": [],
   "plugin-api-version": "2.0.0"
 }
