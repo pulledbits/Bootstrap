@@ -2,51 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
-use Functional as F;
 use Webmozart\PathUtil\Path;
-
-/**
- * array_merge_recursive does indeed merge arrays, but it converts values with duplicate
- * keys to arrays rather than overwriting the value in the first array with the duplicate
- * value in the second array, as array_merge does. I.e., with array_merge_recursive,
- * this happens (documented behavior):
- *
- * array_merge_recursive(array('key' => 'org value'), array('key' => 'new value'));
- *     => array('key' => array('org value', 'new value'));
- *
- * array_merge_recursive_distinct does not change the datatypes of the values in the arrays.
- * Matching keys' values in the second array overwrite those in the first array, as is the
- * case with array_merge, i.e.:
- *
- * array_merge_recursive_distinct(array('key' => 'org value'), array('key' => 'new value'));
- *     => array('key' => array('new value'));
- *
- * Parameters are passed by reference, though only for performance reasons. They're not
- * altered by this function.
- *
- * @param array $array1
- * @param array ...$arrays
- * @return array
- * @author Daniel <daniel (at) danielsmedegaardbuus (dot) dk>
- * @author Gabriel Sobrinho <gabriel (dot) sobrinho (at) gmail (dot) com>
- * @author Rik Meijer <hello (at) rikmeijer (dot) nl>
- */
-function array_merge_recursive_distinct(array $array1, array ...$arrays): array
-{
-    $merge = static function (array $merged, array ...$arrays) use (&$merge): array {
-        array_walk($arrays, static function (array $array) use ($merge, &$merged) {
-            foreach ($array as $key => $value) {
-                if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
-                    $merged [$key] = $merge($merged[$key], $value);
-                } else {
-                    $merged [$key] = $value;
-                }
-            }
-        });
-        return $merged;
-    };
-    return $merge($array1, ...$arrays);
-}
+use function Functional\partial_left;
 
 function array_map_assoc(callable $callback, array $array, array ...$arrays): array
 {
@@ -65,8 +22,7 @@ class Configuration
 {
     public static function open(string $root): callable
     {
-        $path = $root . DIRECTORY_SEPARATOR . 'config.php';
-        return static function (string $section) use ($path) {
+        return partial_left(static function (string $path, string $section) {
             static $config;
             if (isset($config) === false) {
                 if (file_exists($path) === false) {
@@ -83,7 +39,7 @@ class Configuration
                 return [];
             }
             return is_array($config[$section]) ? $config[$section] : [];
-        };
+        }, $root . DIRECTORY_SEPARATOR . 'config.php');
     }
 
     public static function validate(array $schema, array $configuration, array $context): array
@@ -96,23 +52,19 @@ class Configuration
         }, $schema, $configuration);
     }
 
-    public static function default(mixed $defaultValue): callable
+    public static function default(mixed $defaultValue, mixed $value): mixed
     {
-        return F\partial_left(static function (mixed $defaultValue, mixed $value): mixed {
-            return $value ?? $defaultValue;
-        }, $defaultValue);
+        return $value ?? $defaultValue;
     }
 
-    public static function path(string ...$defaultValue): callable
+    public static function path(string $defaultValue, mixed $value, array $context): mixed
     {
-        return F\partial_left(static function (string $defaultValue, mixed $value, array $context): mixed {
-            if ($value === null) {
-                $value = $defaultValue;
-            }
-            if (Path::isRelative($value)) {
-                return Path::join($context['configuration-path'], $value);
-            }
-            return $value;
-        }, Path::join(...$defaultValue));
+        if ($value === null) {
+            $value = $defaultValue;
+        }
+        if (Path::isRelative($value)) {
+            return Path::join($context['configuration-path'], $value);
+        }
+        return $value;
     }
 }
