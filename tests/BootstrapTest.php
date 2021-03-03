@@ -18,7 +18,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
         $f = '\\my\\own\\ns\\resource';
 
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => \\rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '  return (object)["option" => $configuration["option"]]; ' . PHP_EOL . '};');
 
         // Act
         Bootstrap::generate($this->getConfigurationRoot());
@@ -50,7 +50,7 @@ final class BootstrapTest extends TestCase
         $f = $this->getFQFN('resourceCustom');
 
         $this->createConfig('config', ["resourceCustom" => ["option" => $value2]]);
-        $this->createFunction('resourceCustom', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
+        $this->createFunction('resourceCustom', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) {' . PHP_EOL . '   return (object)["option" => $configuration["option"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -64,7 +64,7 @@ final class BootstrapTest extends TestCase
         $f = $this->getFQFN('resource');
 
         $this->createConfig('config', ["resource" => ["option2" => "custom"]]);
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option1" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["option1" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '   return (object)["option" => $configuration["option1"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -230,7 +230,7 @@ final class BootstrapTest extends TestCase
         $value = uniqid('', true);
         $f = $this->getFQFN('resource');
 
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["status" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -243,7 +243,7 @@ final class BootstrapTest extends TestCase
     {
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
         $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => ' . $this->getFQFN('configuration\\path') . '("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -255,7 +255,7 @@ final class BootstrapTest extends TestCase
     {
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir'));
         $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => ' . $this->getFQFN('configuration\\path') . '("somedir", "somesubdir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -268,7 +268,7 @@ final class BootstrapTest extends TestCase
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somefolder'));
         $f = $this->getFQFN('resource');
         $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
-        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => rikmeijer\\Bootstrap\\Configuration::path("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
+        $this->createFunction('resource', '<?php ' . PHP_EOL . '$configuration = ' . $f . '\\validate(["path" => ' . $this->getFQFN('configuration\\path') . '("somedir")]); ' . PHP_EOL . 'return function() use ($configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -280,7 +280,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency') . '\\validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency') . '\\validate(["status" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function() use ($configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
         $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '()->status]; ' . PHP_EOL . '};');
 
@@ -295,7 +295,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency') . '\\validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency') . '\\validate(["status" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]); ' . PHP_EOL . 'return function(string $extratext) use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '};');
         $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return function() {' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency') . '("Hello World!")->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
@@ -309,7 +309,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $this->createFunction('dependency2', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency2') . '\\validate(["status" => rikmeijer\\Bootstrap\\Configuration::default("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
+        $this->createFunction('dependency2', '<?php ' . PHP_EOL . '$configuration = ' . $this->getFQFN('dependency2') . '\\validate(["status" => ' . $this->getFQFN('configuration\\string') . '("' . $value . '")]);' . PHP_EOL . 'return function() use ($configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '};');
 
         $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return function() { ' . PHP_EOL . '   return (object)["status" => ' . $this->getFQFN('dependency2') . '()->status]; ' . PHP_EOL . '};');
 
