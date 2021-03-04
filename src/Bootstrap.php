@@ -8,15 +8,18 @@ final class Bootstrap
 {
     public static function generate(string $configurationPath): void
     {
+        $resources = [__DIR__ . DIRECTORY_SEPARATOR . 'configuration' => 'configuration'];
         $schema = ['path' => F\partial_left([Configuration::class, "path"], 'bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) {
             return $value ?? $defaultValue;
         }, __NAMESPACE__ . '\\' . basename($configurationPath))];
         $configuration = Configuration::open($configurationPath);
         $bootstrapConfig = Configuration::validate($schema, $configuration('BOOTSTRAP'), ['configuration-path' => $configurationPath]);
 
+        $resources[$bootstrapConfig['path']] = '';
+
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate([__DIR__ . DIRECTORY_SEPARATOR . 'configuration' => 'configuration', $bootstrapConfig['path'] => ''], static function (string $resourcePath, string $resourceCollection, string $resourceNamespace) use ($bootstrapConfig, $configuration, $fp) {
+        Resource::generate($resources, static function (string $resourcePath, string $resourceCollection, string $resourceNamespace) use ($bootstrapConfig, $configuration, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
