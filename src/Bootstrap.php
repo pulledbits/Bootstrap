@@ -16,20 +16,20 @@ final class Bootstrap
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate([__DIR__ => '', $bootstrapConfig['path'] => ''], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
+        Resource::generate([__DIR__ . DIRECTORY_SEPARATOR . 'configuration' => 'configuration', $bootstrapConfig['path'] => ''], static function (string $resourcePath, string $resourceCollection, string $resourceNamespace) use ($bootstrapConfig, $configuration, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
-            } elseif ($resourceNSPath !== '') {
-                $resourceNS = $bootstrapConfig['namespace'] . '\\' . $resourceNSPath;
+            } elseif ($resourceNamespace !== '') {
+                $resourceNS = $bootstrapConfig['namespace'] . '\\' . $resourceNamespace;
             } else {
                 $resourceNS = $bootstrapConfig['namespace'];
             }
 
-            if ($resourceNSPath !== '') {
-                $configSection = str_replace('\\', '/', $resourceNSPath) . '/';
+            if ($resourceCollection !== '') {
+                $configSection = $resourceCollection . '/';
             }
 
             $parameters = '';

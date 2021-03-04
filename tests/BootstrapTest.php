@@ -396,4 +396,10 @@ final class BootstrapTest extends TestCase
         }
         @rmdir($dir);
     }
+
+    /** @noinspection PhpUnusedPrivateMethodInspection */
+    private function exposeGeneratedFunctions(): void
+    {
+        print file_get_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
+    }
 }

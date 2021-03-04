@@ -6,20 +6,18 @@ class Resource
 {
     public static function generate(array $resourcesPaths, callable $writer): void
     {
-        foreach ($resourcesPaths as $resourcesPath => $resourceNSPath) {
-            self::recurse($resourcesPath, $resourceNSPath, $writer);
+        foreach ($resourcesPaths as $resourcesPath => $resourceNamespace) {
+            self::recurse($resourcesPath, '', $resourceNamespace, $writer);
         }
     }
 
-    private static function recurse(string $resourcesPath, string $resourceNSPath, callable $writer): void
+    private static function recurse(string $baseDirectory, string $path, string $namespace, callable $writer): void
     {
-        foreach (glob($resourcesPath . DIRECTORY_SEPARATOR . $resourceNSPath . DIRECTORY_SEPARATOR . '*') as $resourceFilePath) {
+        foreach (glob($baseDirectory . ($path !== '' ? DIRECTORY_SEPARATOR . $path : '') . DIRECTORY_SEPARATOR . '*') as $resourceFilePath) {
             if (is_dir($resourceFilePath)) {
-                self::recurse($resourcesPath, trim(str_replace($resourcesPath, '', $resourceFilePath) . DIRECTORY_SEPARATOR, '/\\'), $writer);
-                continue;
-            }
-            if (str_ends_with($resourceFilePath, '.php')) {
-                $writer($resourceNSPath, $resourceFilePath);
+                self::recurse($baseDirectory, trim($path . '/' . basename($resourceFilePath), '/'), trim($namespace . '\\' . basename($resourceFilePath), '\\'), $writer);
+            } elseif (str_ends_with($resourceFilePath, '.php')) {
+                $writer($resourceFilePath, $path, $namespace);
             }
         }
     }
