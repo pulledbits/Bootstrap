@@ -4,6 +4,7 @@
 namespace rikmeijer\Bootstrap;
 
 
+use Functional as F;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
@@ -12,7 +13,7 @@ class PHP
 {
     public static function function (string $fqfn, string $parameters, string $returnType, string $code): string
     {
-        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . basename($fqfn) . ' (' . $parameters . ') ' . $returnType . ' {' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
+        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . F\last(explode('\\', $fqfn)) . ' (' . $parameters . ') ' . $returnType . ' {' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string
