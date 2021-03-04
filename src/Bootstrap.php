@@ -20,13 +20,10 @@ final class Bootstrap
         fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
         fwrite($fp, PHP_EOL . 'use Functional as F;');
 
-        foreach (["boolean" => 'bool', "integer" => 'int', "float" => 'float', "string" => 'string', 'arr' => 'array'] as $function => $type) {
-            fwrite($fp, PHP::function($bootstrapConfig['namespace'] . '\\configuration\\' . $function, $type . ' $defaultValue', ': callable', 'return F\partial_left([Configuration::class, "default"], $defaultValue);'));
-        }
-
         fwrite($fp, PHP::function($bootstrapConfig['namespace'] . '\\configuration\\path', 'string ...$defaultValue', ': callable', 'return F\partial_right(F\partial_left([Configuration::class, "path"], implode(DIRECTORY_SEPARATOR, $defaultValue)), ["configuration-path" => __DIR__]);'));
         fwrite($fp, PHP_EOL . '}');
-        Resource::generate([$bootstrapConfig['path']], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
+
+        Resource::generate([__DIR__ => 'configuration', $bootstrapConfig['path'] => ''], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
