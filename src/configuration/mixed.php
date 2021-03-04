@@ -2,6 +2,9 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
-return static function (mixed $defaultValue, mixed $value): mixed {
-    return $value ?? $defaultValue;
+use Functional as F;
+use rikmeijer\Bootstrap\Configuration;
+
+return static function (mixed $defaultValue): callable {
+    return F\partial_left([Configuration::class, 'default'], $defaultValue);
 };
