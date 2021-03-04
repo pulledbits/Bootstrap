@@ -1,6 +1,7 @@
 # Bootstrap
 
-Bootstrap Closure for loading resources and configuration
+Bootstraps closures with configuration and provides them as a PHP-function in your project. Making it easy to bootstrap
+resources.
 
 ## Usage
 
@@ -19,7 +20,10 @@ return [
     ],
     'BOOTSTRAP' => [
         'path' => CONFIGURATION_PATH . DIRECTORY_SEPARATOR . 'bootstrap' // optional: default is directory bootstrap under configuration-path
-        'namespace' => __NAMESPACE__ . '\\' . basename(getcwd()), // eg rikmeijer\Bootstrap\myProject
+                                                                         // when no namespace is configured in resource
+                                                                         // the function will be generated under
+                                                                         // BOOTSTRAP.namespace . '\\' . basename(getcwd())
+        'namespace' => 'my\\project\\namespace', // default rikmeijer\Bootstrap
         'functions-path' => CONFIGURATION_PATH . DIRECTORY_SEPARATOR . '_f.php'
     ]
 ];
@@ -35,11 +39,8 @@ Resource loader for logger
 use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
 
-return static function(string $level, string $message) : LoggerInterface {
-    $configuration = \rikmeijer\Bootstrap\myProject\logger\validate([
-        "channel" => \rikmeijer\Bootstrap\Configuration::default("MyApp")
-    ]); 
 
+return \rikmeijer\Bootstrap\myProject\logger\configure(static function(array $configuration, string $level, string $message) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new SyslogHandler("debug"));
     switch ($level) {
@@ -48,7 +49,10 @@ return static function(string $level, string $message) : LoggerInterface {
             break;
     }
     return $logger;
-};
+}, [
+    "channel" => \rikmeijer\Bootstrap\myProject\string("MyApp"), // helper functions reside in project namespace (BOOTSTRAP/namespace or \rikmeijer\Bootstrap\<BASENAME_CONFIG_DIR>)
+    "no-default-option" => \rikmeijer\Bootstrap\myProject\string(null), // this will cause an error when not in config.php and thus enforcing a value (making it required)
+]);
 ```
 
 ### /bootstrap/loggerDependant.php
