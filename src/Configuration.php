@@ -4,19 +4,8 @@ namespace rikmeijer\Bootstrap;
 
 use Webmozart\PathUtil\Path;
 use function Functional\partial_left;
+use function trigger_error;
 
-function array_map_assoc(callable $callback, array $array, array ...$arrays): array
-{
-    $map = [];
-    foreach ($array as $key => $value) {
-        $map[$key] = $callback($value, ...(static function (string|int $key, array $arrays): array {
-            return array_map(static function (array $array) use ($key): mixed {
-                return $array[$key] ?? null;
-            }, $arrays);
-        })($key, $arrays));
-    }
-    return $map;
-}
 
 class Configuration
 {
@@ -47,20 +36,25 @@ class Configuration
         if (count($schema) === 0) {
             return $configuration;
         }
-        return array_map_assoc(function (callable $validator, mixed $value) use ($context) {
-            return $validator($value, $context);
-        }, $schema, $configuration);
+        $map = [];
+        foreach ($schema as $key => $validator) {
+            $error = static function (string $message) use ($key) {
+                trigger_error($key . ' ' . $message, E_USER_ERROR);
+            };
+            $map[$key] = $validator($configuration[$key] ?? null, $error, $context);
+        }
+        return $map;
     }
 
-    public static function default(mixed $defaultValue, mixed $value): mixed
+    public static function default(mixed $defaultValue, mixed $value, callable $error): mixed
     {
-        return $value ?? $defaultValue;
+        return $value ?? $defaultValue ?? $error('is not set and has no default value');
     }
 
-    public static function path(string $defaultValue, mixed $value, array $context): mixed
+    public static function path(string $defaultValue, mixed $value, callable $error, array $context): mixed
     {
         if ($value === null) {
-            $value = $defaultValue;
+            $value = $defaultValue ?? $error('is not set and has no default value');
         }
         if (Path::isRelative($value)) {
             return Path::join($context['configuration-path'], $value);

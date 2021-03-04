@@ -34,8 +34,163 @@ final class BootstrapTest extends TestCase
         self::assertEquals(3.14, $f()->configuration["optionFloat"]);
         self::assertEquals("text", $f()->configuration["optionString"]);
         self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
-        $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
+
+    public function testConfig_WhenOptionBooleanRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionBoolean is not set and has no default value');
+        $f()->configuration["optionBoolean"];
+    }
+
+    public function testConfig_WhenOptionBooleanRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createConfig('config', ['resource' => ['optionBoolean' => true]]);
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertTrue($f()->configuration["optionBoolean"]);
+    }
+
+    public function testConfig_WhenOptionIntegerRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionInteger is not set and has no default value');
+        $f()->configuration["optionInteger"];
+    }
+
+    public function testConfig_WhenOptionIntegerRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createConfig('config', ['resource' => ['optionInteger' => 1]]);
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals(1, $f()->configuration["optionInteger"]);
+    }
+
+    public function testConfig_WhenOptionFloatRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionFloat is not set and has no default value');
+        $f()->configuration["optionFloat"];
+    }
+
+    public function testConfig_WhenOptionFloatRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createConfig('config', ['resource' => ['optionFloat' => 3.14]]);
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals(3.14, $f()->configuration["optionFloat"]);
+    }
+
+    public function testConfig_WhenOptionStringRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionString is not set and has no default value');
+        $f()->configuration["optionString"];
+    }
+
+    public function testConfig_WhenOptionStringRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createConfig('config', ['resource' => ['optionString' => "text"]]);
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals("text", $f()->configuration["optionString"]);
+    }
+
+    public function testConfig_WhenOptionArrayRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionArray is not set and has no default value');
+        $f()->configuration["optionArray"];
+    }
+
+    public function testConfig_WhenOptionArrayRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        $f = '\\my\\own\\ns\\resource';
+        $this->createConfig('config', ['resource' => ['optionArray' => ["some", "value"]]]);
+        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+            "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
+            ]);');
+
+        // Act
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
+    }
+
 
     private function createConfig(string $streamID, array $config): void
     {
