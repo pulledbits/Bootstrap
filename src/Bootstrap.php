@@ -16,14 +16,7 @@ final class Bootstrap
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        fwrite($fp, PHP_EOL . 'namespace ' . $bootstrapConfig['namespace'] . '\\configuration {');
-        fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
-        fwrite($fp, PHP_EOL . 'use Functional as F;');
-
-        fwrite($fp, PHP::function($bootstrapConfig['namespace'] . '\\configuration\\path', 'string ...$defaultValue', ': callable', 'return F\partial_right(F\partial_left([Configuration::class, "path"], implode(DIRECTORY_SEPARATOR, $defaultValue)), ["configuration-path" => __DIR__]);'));
-        fwrite($fp, PHP_EOL . '}');
-
-        Resource::generate([__DIR__ => 'configuration', $bootstrapConfig['path'] => ''], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
+        Resource::generate([__DIR__ => '', $bootstrapConfig['path'] => ''], static function (string $resourceNSPath, string $resourcePath) use ($bootstrapConfig, $configuration, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
