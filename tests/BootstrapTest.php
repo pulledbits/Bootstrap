@@ -217,6 +217,18 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Hello World dus', file_get_contents($somefile));
     }
 
+    public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinary(): void
+    {
+        $somefile = Path::join($this->getConfigurationRoot(), 'binary.bat');
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => $configuration["binary"]("arg1", "arg2")]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("binary.bat")]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals("arguments: arg1 arg2", $f()->file);
+    }
+
     private function createConfig(string $streamID, array $config): void
     {
         ftruncate($this->streams[$streamID], 0);
