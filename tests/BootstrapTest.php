@@ -193,7 +193,8 @@ final class BootstrapTest extends TestCase
 
     public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenFilestream(): void
     {
-        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+        $somefile = Path::join($this->getConfigurationRoot(), 'somefile.txt');
+        file_put_contents($somefile, 'Hello World');
         $f = $this->getFQFN('resource');
         $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => \fread($configuration["file"]("rb"), 11)]; ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("somefile.txt")]);');
 
@@ -201,6 +202,19 @@ final class BootstrapTest extends TestCase
         $this->activateBootstrap();
 
         self::assertEquals('Hello World', $f()->file);
+    }
+
+    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenWritableStream(): void
+    {
+        $somefile = Path::join($this->getConfigurationRoot(), 'somefile.txt');
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => \fwrite($configuration["file"]("wb"), "Hello World dus")]; ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("somefile.txt")]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals(15, $f()->file);
+        self::assertEquals('Hello World dus', file_get_contents($somefile));
     }
 
     private function createConfig(string $streamID, array $config): void
