@@ -38,7 +38,7 @@ class Configuration
         }
         $map = [];
         foreach ($schema as $key => $validator) {
-            $error = static function (string $message) use ($key) {
+            $error = static function (string $message) use ($key): void {
                 trigger_error($key . ' ' . $message, E_USER_ERROR);
             };
             $map[$key] = $validator($configuration[$key] ?? null, $error, $context);
@@ -51,14 +51,27 @@ class Configuration
         return $value ?? $defaultValue ?? $error('is not set and has no default value');
     }
 
-    public static function path(string $defaultValue, mixed $value, callable $error, array $context): mixed
+    public static function pathValidator(string ...$defaultValue): callable
     {
-        if ($value === null) {
-            $value = $defaultValue ?? $error('is not set and has no default value');
-        }
-        if (Path::isRelative($value)) {
-            return Path::join($context['configuration-path'], $value);
-        }
-        return $value;
+        return partial_left(static function (?string $defaultValue, mixed $value, callable $error, array $context) {
+            if ($value === null) {
+                $value = $defaultValue ?? $error('is not set and has no default value');
+            }
+            if (Path::isRelative($value)) {
+                return Path::join($context['configuration-path'], $value);
+            }
+            return $value;
+        }, count($defaultValue) > 0 ? implode(DIRECTORY_SEPARATOR, $defaultValue) : null);
+    }
+
+    public static function fileValidator(string ...$defaultValue): callable
+    {
+        $pathValidator = self::pathValidator(...$defaultValue);
+        return static function (mixed $value, callable $error, array $context) use ($pathValidator) {
+            $path = $pathValidator($value, $error, $context);
+            return static function (string $mode) use ($path) {
+                return fopen($path, $mode);
+            };
+        };
     }
 }

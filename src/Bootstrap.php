@@ -10,7 +10,7 @@ final class Bootstrap
     {
         $resources = [__DIR__ . DIRECTORY_SEPARATOR . 'configuration' => 'configuration'];
         $groupNamespace = basename($configurationPath);
-        $schema = ['path' => F\partial_left([Configuration::class, "path"], 'bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
+        $schema = ['path' => Configuration::pathValidator('bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
             if ($value !== null) {
                 $groupNamespace = '';
                 return $value;

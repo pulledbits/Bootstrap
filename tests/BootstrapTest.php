@@ -38,8 +38,8 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionBooleanRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
             ]);');
 
@@ -54,9 +54,9 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionBooleanRequired_Expect_NoErrorWhenSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
+        $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['optionBoolean' => true]]);
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
             ]);');
 
@@ -69,8 +69,8 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionIntegerRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
             ]);');
 
@@ -85,9 +85,9 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionIntegerRequired_Expect_NoErrorWhenSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
+        $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['optionInteger' => 1]]);
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
             ]);');
 
@@ -100,8 +100,8 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionFloatRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
             ]);');
 
@@ -116,9 +116,9 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionFloatRequired_Expect_NoErrorWhenSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
+        $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['optionFloat' => 3.14]]);
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
             ]);');
 
@@ -131,8 +131,8 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionStringRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
             ]);');
 
@@ -147,9 +147,9 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionStringRequired_Expect_NoErrorWhenSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
+        $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['optionString' => "text"]]);
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
             ]);');
 
@@ -162,8 +162,8 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionArrayRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
             ]);');
 
@@ -178,9 +178,9 @@ final class BootstrapTest extends TestCase
 
     public function testConfig_WhenOptionArrayRequired_Expect_NoErrorWhenSupplied(): void
     {
-        $f = '\\my\\own\\ns\\resource';
+        $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['optionArray' => ["some", "value"]]]);
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
             "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
             ]);');
 
@@ -220,13 +220,15 @@ final class BootstrapTest extends TestCase
     public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinary(): void
     {
         $somefile = Path::join($this->getConfigurationRoot(), 'binary.bat');
+        file_put_contents($somefile, '@echo off' . PHP_EOL . 'echo arguments: %1 %2');
         $f = $this->getFQFN('resource');
+        $this->createConfig('config', ['resource' => ['binary' => $somefile]]);
         $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => $configuration["binary"]("arg1", "arg2")]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("binary.bat")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertEquals("arguments: arg1 arg2", $f()->file);
+        self::assertEquals('arguments: "arg1" "arg2"' . PHP_EOL, $f()->file);
     }
 
     private function createConfig(string $streamID, array $config): void
@@ -428,6 +430,20 @@ final class BootstrapTest extends TestCase
     }
 
 
+    public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
+    {
+        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["optionPath"]];' . PHP_EOL . '}, ["optionPath" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionPath is not set and has no default value');
+        $f()->status;
+    }
+
     public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
     {
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
@@ -457,7 +473,7 @@ final class BootstrapTest extends TestCase
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somefolder'));
         $f = $this->getFQFN('resource');
         $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '}, ["path" => ' . $this->getBootstrapFQFN('configuration\\path') . '("somedir")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '}, ["path" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
