@@ -6,8 +6,8 @@ class Resource
 {
     public static function generate(array $resourcesPaths, callable $writer): void
     {
-        foreach ($resourcesPaths as $resourcesPath => $resourceNamespace) {
-            self::recurse($resourcesPath, '', $resourceNamespace, $writer);
+        foreach ($resourcesPaths as $resourcesPath) {
+            self::recurse($resourcesPath, '', '', $writer);
         }
     }
 

@@ -8,18 +8,17 @@ final class Bootstrap
 {
     public static function generate(string $configurationPath): void
     {
-        $resources = [__DIR__ . DIRECTORY_SEPARATOR . 'configuration' => 'configuration'];
-        $groupNamespace = basename($configurationPath);
+        $resources = [__DIR__ . DIRECTORY_SEPARATOR . 'configuration'];
         $schema = ['path' => Configuration::pathValidator('bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
             if ($value !== null) {
                 $groupNamespace = '';
                 return $value;
             }
             return $defaultValue;
-        }, __NAMESPACE__)];
+        }, __NAMESPACE__ . '\\' . basename($configurationPath))];
         $configuration = Configuration::open($configurationPath);
         $bootstrapConfig = Configuration::validate($schema, $configuration('BOOTSTRAP'), ['configuration-path' => $configurationPath]);
-        $resources[$bootstrapConfig['path']] = $groupNamespace;
+        $resources[] = $bootstrapConfig['path'];
 
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
