@@ -223,7 +223,7 @@ final class BootstrapTest extends TestCase
         file_put_contents($somefile, '@echo off' . PHP_EOL . 'echo arguments: %1 %2');
         $f = $this->getFQFN('resource');
         $this->createConfig('config', ['resource' => ['binary' => $somefile]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; $configuration["binary"](["arg1", "arg2"], function(string $line) use (&$out) { $out = $line; });    return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("binary.bat")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"]("arg1", "arg2") as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("binary.bat")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();

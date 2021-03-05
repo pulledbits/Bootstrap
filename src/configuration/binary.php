@@ -11,7 +11,7 @@ return static function (string ...$defaultValue): callable {
             return static function (): void {
             };
         }
-        return static function (array $arguments, callable $out) use ($binary): void {
+        return static function (string ...$arguments) use ($binary): Generator {
             $escapedArguments = array_map('escapeshellarg', $arguments);
             $command = '"' . $binary . '" ' . implode(' ', $escapedArguments);
             $process = proc_open($command, [STDIN,  // stdin is a pipe that the child will read from
@@ -23,7 +23,7 @@ return static function (string ...$defaultValue): callable {
                 while (feof($pipes[1]) === false) {
                     $buffer = fgets($pipes[1]);
                     if ($buffer !== false) {
-                        $out($buffer);
+                        yield $buffer;
                     }
                 }
                 fclose($pipes[1]);
