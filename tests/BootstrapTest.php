@@ -191,6 +191,17 @@ final class BootstrapTest extends TestCase
         self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
     }
 
+    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenFilestream(): void
+    {
+        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => \fread($configuration["file"]("rb"), 11)]; ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("somefile.txt")]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertEquals('Hello World', $f()->file);
+    }
 
     private function createConfig(string $streamID, array $config): void
     {
