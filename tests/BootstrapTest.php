@@ -219,16 +219,34 @@ final class BootstrapTest extends TestCase
 
     public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinary(): void
     {
-        $somefile = Path::join($this->getConfigurationRoot(), 'binary.bat');
-        file_put_contents($somefile, '@echo off' . PHP_EOL . 'echo arguments: %1 %2');
         $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['binary' => $somefile]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"]("arg1", "arg2") as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("binary.bat")]);');
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', "echo test"]],
+            default => ['/usr/bin/bash', ['-c', "echo test"]],
+        };
+
+        $this->createConfig('config', ['resource' => ['binary' => $command[0]]]);
+        $arguments = $command[1];
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"](...' . var_export($arguments, true) . ') as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertEquals('arguments: "arg1" "arg2"' . PHP_EOL, $f()->file);
+        self::assertEquals('test' . PHP_EOL, $f()->file);
+    }
+
+
+    public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
+    {
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"]() as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '()]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('binary is not set and has no default value');
+        $f()->file;
     }
 
     private function createConfig(string $streamID, array $config): void

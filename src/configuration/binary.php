@@ -15,12 +15,12 @@ return static function (string ...$defaultValue): callable {
             };
         }
         return static function (string ...$arguments) use ($binary): Generator {
-            $escapedArguments = array_map('escapeshellarg', $arguments);
-            $command = '"' . $binary . '" ' . implode(' ', $escapedArguments);
-            $process = proc_open($command, [STDIN,  // stdin is a pipe that the child will read from
-                ['pipe', 'w'],  // stdout is a pipe that the child will write to
-                STDERR // stderr is a file to write to
-            ], $pipes);
+            $process = proc_open(escapeshellcmd($binary) . ' ' . implode(' ', array_map(static function (string $arg) {
+                    return match (PHP_OS_FAMILY) {
+                        'Windows' => str_starts_with($arg, '/') ? $arg : escapeshellarg($arg),
+                        default => str_starts_with($arg, '-') ? $arg : escapeshellarg($arg),
+                    };
+                }, $arguments)), [STDIN, ['pipe', 'w'], STDERR], $pipes);
 
             if ($process !== false) {
                 while (feof($pipes[1]) === false) {
