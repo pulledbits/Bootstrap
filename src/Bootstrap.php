@@ -8,7 +8,7 @@ final class Bootstrap
 {
     public static function generate(string $configurationPath): void
     {
-        $resources = [__DIR__ . DIRECTORY_SEPARATOR . 'configuration'];
+        $resources = [__DIR__ => 'configuration'];
         $schema = ['path' => Configuration::pathValidator('bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
             if ($value !== null) {
                 $groupNamespace = '';
@@ -18,7 +18,7 @@ final class Bootstrap
         }, __NAMESPACE__ . '\\' . basename($configurationPath))];
         $configuration = Configuration::open($configurationPath);
         $bootstrapConfig = Configuration::validate($schema, $configuration('BOOTSTRAP'), ['configuration-path' => $configurationPath]);
-        $resources[] = $bootstrapConfig['path'];
+        $resources[$bootstrapConfig['path']] = '';
 
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');

@@ -235,6 +235,26 @@ final class BootstrapTest extends TestCase
         self::assertEquals('test' . PHP_EOL, $f()->file);
     }
 
+    /**
+     * @runInSeparateProcess
+     */
+    public function testWhen_BinarySimulation_Expect_BinaryNotReallyBeExecuted(): void
+    {
+        $f = $this->getFQFN('resource');
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', "echo test"]],
+            default => ['/usr/bin/bash', ['-c', "echo test"]],
+        };
+
+        $this->createConfig('config', ['configuration/binary' => ['simulation' => true], 'resource' => ['binary' => $command[0]]]);
+        $arguments = $command[1];
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"](...' . var_export($arguments, true) . ') as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        self::assertStringContainsString('(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1][0] . ' ' . escapeshellarg($command[1][1]), $f()->file);
+    }
 
     public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
     {
