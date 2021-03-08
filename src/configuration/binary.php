@@ -5,8 +5,8 @@ namespace rikmeijer\Bootstrap\configuration;
 use rikmeijer\Bootstrap\Configuration;
 
 /** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
-return binary\configure(static function (array $configuration, string ...$defaultArguments): callable {
-    $pathValidator = Configuration::pathValidator(...(count($defaultArguments) > 0 ? [array_shift($defaultArguments)] : []));
+return binary\configure(static function (array $configuration, string $defaultBinary = null, array $defaultArguments = []): callable {
+    $pathValidator = Configuration::pathValidator(...($defaultBinary !== null ? [$defaultBinary] : []));
     return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultArguments, $configuration) {
         $binary = $pathValidator($configuredCommand !== null ? $configuredCommand[0] : null, $error, $context);
         $configuredArguments = Configuration::default($defaultArguments, $configuredCommand !== null ? $configuredCommand[1] : null, $error);
@@ -23,7 +23,7 @@ return binary\configure(static function (array $configuration, string ...$defaul
                         'Windows' => str_starts_with($arg, '/') ? $arg : escapeshellarg($arg),
                         default => str_starts_with($arg, '-') ? $arg : escapeshellarg($arg),
                     };
-                }, $arguments + $configuredArguments));
+                }, array_merge($configuredArguments, $arguments)));
         };
 
 

@@ -230,6 +230,24 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Hello World dus', file_get_contents($somefile));
     }
 
+    public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void
+    {
+        $f = $this->getFQFN('resource');
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', 'cmd' => "echo test"]],
+            default => ['/usr/bin/bash', ['-c', 'cmd' => "echo test"]],
+        };
+
+        $this->createConfig('config', ['resource' => ['binary' => $command]]);
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test...", cmd : "echo test4"); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "cmd" => "echo test"])]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectOutputString("Testing test test..." . PHP_EOL . 'test4' . PHP_EOL);
+        $f();
+    }
+
     public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinary(): void
     {
         $f = $this->getFQFN('resource');
@@ -239,7 +257,7 @@ final class BootstrapTest extends TestCase
         };
 
         $this->createConfig('config', ['resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "echo test"])]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -260,7 +278,7 @@ final class BootstrapTest extends TestCase
         };
 
         $this->createConfig('config', ['configuration/binary' => ['simulation' => true], 'resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "echo test"])]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
