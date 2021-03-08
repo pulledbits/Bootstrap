@@ -9,8 +9,7 @@
     "lstrojny/functional-php": "^1.15"
   },
   "require-dev": {
-    "phpunit/phpunit": "^9",
-    "ext-uopz": "*"
+    "phpunit/phpunit": "^9"
   },
   "autoload": {
     "psr-4": {
