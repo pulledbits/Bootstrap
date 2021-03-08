@@ -24,32 +24,50 @@ return binary\configure(static function (array $configuration, string ...$defaul
                 }, $arguments));
         };
 
-        return static function (string $description, string ...$arguments) use ($command, $configuration, $error): int {
+        $in = static function (): string {
+            static $in;
+            if (isset($in) === false) {
+                $in = fopen('php://input', 'rb');
+            }
+
+            return fgets($in) ?: '';
+        };
+        $out = static function (string $message): int {
+            static $in;
+            if (isset($in) === false) {
+                $out = fopen('php://output', 'wb');
+            }
+
+            return fwrite($out, $message);
+        };
+
+        return static function (string $description, string ...$arguments) use ($command, $configuration, $in, $out, $error): int {
             print $description . PHP_EOL;
             if ($configuration['simulation']) {
-                print '(s) ' . $command(...$arguments);
+                $out('(s) ' . $command(...$arguments));
                 return 0;
             }
+
+            $stderr = tmpfile();
             $descriptors = [0 => ["pipe", "rb"],    // stdin
                 1 => ["pipe", "wb"],    // stdout
-                2 => ["pipe", "wb"]        // stderr
+                2 => $stderr        // stderr
             ];
             $process = proc_open($command(...$arguments), $descriptors, $pipes);
             if (is_resource($process) === false) {
                 return -1;
             }
 
+            fwrite($pipes[0], $in());
             fclose($pipes[0]);
-            $stderr = '';
-            while (!feof($pipes[1]) || !feof($pipes[2])) {
-                print fread($pipes[1], 1024);
-                $stderr .= fread($pipes[2], 1024);
+            while (!feof($pipes[1])) {
+                $out(fread($pipes[1], 1024));
             }
             fclose($pipes[1]);
-            fclose($pipes[2]);
 
-            if (empty($stderr) === false) {
-                $error($stderr);
+            if (ftell($stderr) > 0) {
+                fseek($stderr, 0);
+                $error(fread($stderr, 1024));
             }
 
             return proc_close($process);
