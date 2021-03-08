@@ -2,7 +2,6 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
-use Generator;
 use rikmeijer\Bootstrap\Configuration;
 
 /** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
@@ -25,23 +24,35 @@ return binary\configure(static function (array $configuration, string ...$defaul
                 }, $arguments));
         };
 
-        return static function (string ...$arguments) use ($command, $configuration): Generator {
+        return static function (string $description, string ...$arguments) use ($command, $configuration, $error): int {
+            print $description . PHP_EOL;
             if ($configuration['simulation']) {
-                yield '(s) ' . $command(...$arguments);
-                return;
+                print '(s) ' . $command(...$arguments);
+                return 0;
             }
-            $process = proc_open($command(...$arguments), [STDIN, ['pipe', 'w'], STDERR], $pipes);
+            $descriptors = [0 => ["pipe", "rb"],    // stdin
+                1 => ["pipe", "wb"],    // stdout
+                2 => ["pipe", "wb"]        // stderr
+            ];
+            $process = proc_open($command(...$arguments), $descriptors, $pipes);
+            if (is_resource($process) === false) {
+                return -1;
+            }
 
-            if ($process !== false) {
-                while (feof($pipes[1]) === false) {
-                    $buffer = fgets($pipes[1]);
-                    if ($buffer !== false) {
-                        yield $buffer;
-                    }
-                }
-                fclose($pipes[1]);
-                proc_close($process);
+            fclose($pipes[0]);
+            $stderr = '';
+            while (!feof($pipes[1]) || !feof($pipes[2])) {
+                print fread($pipes[1], 1024);
+                $stderr .= fread($pipes[2], 1024);
             }
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+
+            if (empty($stderr) === false) {
+                $error($stderr);
+            }
+
+            return proc_close($process);
         };
     };
 }, ['simulation' => boolean(false)]);

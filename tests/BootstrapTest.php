@@ -227,12 +227,13 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config', ['resource' => ['binary' => $command[0]]]);
         $arguments = $command[1];
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"](...' . var_export($arguments, true) . ') as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test...", ...' . var_export($arguments, true) . '); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertEquals('test' . PHP_EOL, $f()->file);
+        $this->expectOutputString("Testing test test..." . PHP_EOL . 'test' . PHP_EOL);
+        $f();
     }
 
     /**
@@ -248,12 +249,13 @@ final class BootstrapTest extends TestCase
 
         $this->createConfig('config', ['configuration/binary' => ['simulation' => true], 'resource' => ['binary' => $command[0]]]);
         $arguments = $command[1];
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"](...' . var_export($arguments, true) . ') as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?...", ...' . var_export($arguments, true) . '); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash -c \"echo test\"")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertStringContainsString('(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1][0] . ' ' . escapeshellarg($command[1][1]), $f()->file);
+        $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1][0] . ' ' . escapeshellarg($command[1][1]));
+        $f();
     }
 
     public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
@@ -266,7 +268,7 @@ final class BootstrapTest extends TestCase
 
         $this->expectError();
         $this->expectErrorMessage('binary is not set and has no default value');
-        $f()->file;
+        $f();
     }
 
     private function createConfig(string $streamID, array $config): void

@@ -16,14 +16,13 @@ final class Bootstrap
             }
             return $defaultValue;
         }, __NAMESPACE__ . '\\' . basename($configurationPath))];
-        $configuration = Configuration::open($configurationPath);
-        $bootstrapConfig = Configuration::validate($schema, $configuration('BOOTSTRAP'), ['configuration-path' => $configurationPath]);
+        $bootstrapConfig = Configuration::validate($schema, $configurationPath, 'BOOTSTRAP');
         $resources[$bootstrapConfig['path']] = '';
 
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate($resources, static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $configuration, $fp) {
+        Resource::generate($resources, static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $fp) {
             $context = PHP::deductContextFromFile($resourcePath);
 
             $configSection = '';
@@ -57,7 +56,7 @@ final class Bootstrap
             fwrite($fp, PHP_EOL . 'namespace ' . $fqfn . ' { ');
             fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
             fwrite($fp, PHP_EOL . 'use Functional as F;');
-            fwrite($fp, PHP::function($fqfn . '\\configure', 'callable $function, array $schema', ': callable', 'return F\\partial_left($function, Configuration::validate($schema, ' . PHP::export($configuration($configSection)) . ', ["configuration-path" => __DIR__]));'));
+            fwrite($fp, PHP::function($fqfn . '\\configure', 'callable $function, array $schema', ': callable', 'return F\\partial_left($function, Configuration::validate($schema, __DIR__, ' . PHP::export($configSection) . '));'));
             fwrite($fp, '}' . PHP_EOL);
             fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             fwrite($fp, PHP::function($fqfn, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));

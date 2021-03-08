@@ -31,8 +31,9 @@ class Configuration
         }, $root . DIRECTORY_SEPARATOR . 'config.php');
     }
 
-    public static function validate(array $schema, array $configuration, array $context): array
+    public static function validate(array $schema, string $configurationPath, string $section): array
     {
+        $configuration = self::open($configurationPath)($section);
         if (count($schema) === 0) {
             return $configuration;
         }
@@ -41,7 +42,7 @@ class Configuration
             $error = static function (string $message) use ($key): void {
                 trigger_error($key . ' ' . $message, E_USER_ERROR);
             };
-            $map[$key] = $validator($configuration[$key] ?? null, $error, $context);
+            $map[$key] = $validator($configuration[$key] ?? null, $error, ['configuration-path' => $configurationPath]);
         }
         return $map;
     }
