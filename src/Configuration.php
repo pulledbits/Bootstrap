@@ -58,6 +58,9 @@ class Configuration
             if ($value === null) {
                 $value = $defaultValue ?? $error('is not set and has no default value');
             }
+            if (str_starts_with($value, 'php://')) {
+                return $value;
+            }
             if (Path::isRelative($value)) {
                 return Path::join($context['configuration-path'], $value);
             }

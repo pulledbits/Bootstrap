@@ -204,6 +204,19 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Hello World', $f()->file);
     }
 
+
+    public function testWhen_ConfigurationOptionIsFileWithPHPoutput_Expect_FunctionToOpenWritableFilestream(): void
+    {
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : int { ' . PHP_EOL . '    return \fwrite($configuration["file"]("wb"), "Hello World"); ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("php://output")]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectOutputString('Hello World');
+        self::assertEquals(11, $f());
+    }
+
     public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenWritableStream(): void
     {
         $somefile = Path::join($this->getConfigurationRoot(), 'somefile.txt');
