@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use Nette\PhpGenerator\GlobalFunction;
 
 final class Bootstrap
 {
@@ -53,11 +54,18 @@ final class Bootstrap
             $identifier = basename($resourcePath, '.php');
             $fqfn = $resourceNS . '\\' . $identifier;
             $configSection .= $identifier;
+
             fwrite($fp, PHP_EOL . 'namespace ' . $fqfn . ' { ');
             fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
             fwrite($fp, PHP_EOL . 'use Functional as F;');
-            fwrite($fp, PHP::function($fqfn . '\\configure', 'callable $function, array $schema', ': callable', 'return F\\partial_left($function, Configuration::validate($schema, __DIR__, ' . PHP::export($configSection) . '));'));
-            fwrite($fp, '}' . PHP_EOL);
+            $f_configure = new GlobalFunction('configure');
+            $f_configure->addParameter('function', 'callable');
+            $f_configure->addParameter('schema', 'array');
+            $f_configure->setBody('return F\\partial_left($function, Configuration::validate($schema, __DIR__, ' . PHP::export($configSection) . '));');
+            $f_configure->setReturnType('callable');
+            fwrite($fp, $f_configure->__toString());
+            fwrite($fp, PHP_EOL . '}');
+
             fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             fwrite($fp, PHP::function($fqfn, $parameters, $returnType, 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }' . ($void === true ? '' : 'return ') . ' $closure(...func_get_args());'));
             fwrite($fp, '}' . PHP_EOL);

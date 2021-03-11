@@ -13,7 +13,7 @@ class PHP
 {
     public static function function (string $fqfn, string $parameters, string $returnType, string $code): string
     {
-        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . F\last(explode('\\', $fqfn)) . ' (' . $parameters . ') ' . $returnType . ' {' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
+        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . F\last(explode('\\', $fqfn)) . ' (' . $parameters . ') ' . ($returnType !== '' ? ': ' . $returnType : '') . '{' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
     }
 
     public static function export(mixed $variable): string
@@ -56,8 +56,8 @@ class PHP
 
         $tokens = token_get_all($resourceFileContents, TOKEN_PARSE);
 
-        $findNextToken = self::tokenFinder($tokens);
-        $collectTokensUpTo = self::tokenCollector($tokens);
+        $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
+        $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
 
         $context = [];
         if ($findNextToken(T_NAMESPACE) !== null) {
@@ -81,60 +81,56 @@ class PHP
 
 
             $functionSignatureTokens = $collectTokensUpTo('{');
-            $functionSignatureTokenFinder = self::tokenFinder($functionSignatureTokens);
+            $functionSignatureTokenFinder = F\partial_left([__CLASS__, 'tokenFinder'], $functionSignatureTokens);
             if ($functionSignatureTokenFinder(":") !== null) {
-                $context['returnType'] = ':';
+                $context['returnType'] = '';
                 while ($functionSignatureToken = array_shift($functionSignatureTokens)) {
                     $context['returnType'] .= $functionSignatureToken[1];
                 }
-                $context['returnType'] = rtrim($context['returnType']);
+                $context['returnType'] = trim($context['returnType']);
             }
         }
         return $context;
     }
 
 
-    private static function tokenFinder(array &$tokens): callable
+    public static function tokenFinder(array &$tokens, mixed $id, ?int $maxTokenDistance = null): null|array|string
     {
-        return static function (mixed $id, ?int $maxTokenDistance = null) use (&$tokens): null|array|string {
-            while ($token = array_shift($tokens)) {
-                if ($maxTokenDistance > 0) {
-                    $maxTokenDistance--;
-                } elseif ($maxTokenDistance === 0) {
-                    return null;
+        while ($token = array_shift($tokens)) {
+            if ($maxTokenDistance > 0) {
+                $maxTokenDistance--;
+            } elseif ($maxTokenDistance === 0) {
+                return null;
+            }
+            if (is_string($id)) {
+                if ($token === $id) {
+                    return $token;
                 }
-                if (is_string($id)) {
-                    if ($token === $id) {
-                        return $token;
-                    }
-                } elseif (is_int($id)) {
-                    if ($token[0] === $id) {
-                        return $token;
-                    }
+            } elseif (is_int($id)) {
+                if ($token[0] === $id) {
+                    return $token;
                 }
             }
-            return null;
-        };
+        }
+        return null;
     }
 
-    private static function tokenCollector(array &$tokens): callable
+    public static function tokenCollector(array &$tokens, mixed $id): null|array
     {
-        return static function (mixed $id) use (&$tokens): null|array {
-            $buffer = [];
-            while ($token = array_shift($tokens)) {
-                if (is_string($id)) {
-                    if ($token === $id) {
-                        return $buffer;
-                    }
-                } elseif (is_int($id)) {
-                    if ($token[0] === $id) {
-                        return $buffer;
-                    }
+        $buffer = [];
+        while ($token = array_shift($tokens)) {
+            if (is_string($id)) {
+                if ($token === $id) {
+                    return $buffer;
                 }
-                $buffer[] = $token;
+            } elseif (is_int($id)) {
+                if ($token[0] === $id) {
+                    return $buffer;
+                }
             }
-            array_unshift($tokens, ...$buffer);
-            return null;
-        };
+            $buffer[] = $token;
+        }
+        array_unshift($tokens, ...$buffer);
+        return null;
     }
 }
