@@ -43,21 +43,28 @@ final class Bootstrap
                 $configSection = $group . '/';
             }
             $configSection .= $identifier;
-
             if (array_key_exists('parameters', $context)) {
-                F\each(explode(',', $context['parameters']), static function (string $parameter) use ($f) {
-                    if (str_contains($parameter, ' ')) {
-                        [$type, $name] = explode(' ', $parameter);
-                        $f->addParameter($name)->setType($type);
-                    } else {
-                        $f->addParameter($parameter);
+                F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
+                    if ($index === 0 && str_contains($contextParameter['name'], '$configuration')) {
+                        return;
+                    }
+
+                    if ($contextParameter['variadic']) {
+                        $f->setVariadic(true);
+                    }
+                    $parameter = $f->addParameter(substr($contextParameter['name'], 1));
+                    $parameter->setType($contextParameter['type']);
+                    $parameter->setNullable($contextParameter['nullable']);
+
+                    if (array_key_exists('default', $contextParameter)) {
+                        $parameter->setDefaultValue($contextParameter['default']);
                     }
                 });
             }
 
             $returns = true;
             if (array_key_exists('returnType', $context)) {
-                $returns = str_contains($context['returnType'], 'void');
+                $returns = str_contains($context['returnType'], 'void') === false;
                 $f->setReturnType($context['returnType']);
             }
 

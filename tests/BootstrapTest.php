@@ -234,12 +234,12 @@ final class BootstrapTest extends TestCase
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', 'cmd' => "echo test"]],
-            default => ['/usr/bin/bash', ['-c', 'cmd' => "echo test"]],
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', 'cmd' => "echo test"],
+            default => ['/usr/bin/bash', '-c', 'cmd' => "echo test"],
         };
 
         $this->createConfig('config', ['resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test...", cmd : "echo test4"); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "cmd" => "echo test"])]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test...", cmd : "echo test4"); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", cmd : "echo test")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -252,12 +252,12 @@ final class BootstrapTest extends TestCase
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', "echo test"]],
-            default => ['/usr/bin/bash', ['-c', "echo test"]],
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', "echo test"],
+            default => ['/usr/bin/bash', '-c', "echo test"],
         };
 
         $this->createConfig('config', ['resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : int { ' . PHP_EOL . 'return $configuration["binary"]("Testing test test..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "echo test"])]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : int { ' . PHP_EOL . 'return $configuration["binary"]("Testing test test..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -273,17 +273,17 @@ final class BootstrapTest extends TestCase
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', ['/C', "echo test"]],
-            default => ['/usr/bin/bash', ['-c', "echo test"]],
+            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', "echo test"],
+            default => ['/usr/bin/bash', '-c', "echo test"],
         };
 
         $this->createConfig('config', ['configuration/binary' => ['simulation' => true], 'resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", ["-c", "echo test"])]);');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1][0] . ' ' . escapeshellarg($command[1][1]));
+        $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1] . ' ' . escapeshellarg($command[2]));
         $f();
     }
 

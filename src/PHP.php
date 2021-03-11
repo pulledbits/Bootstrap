@@ -50,11 +50,16 @@ class PHP
         return var_export($variable, true);
     }
 
+    private static function tokenize(array $tokens): callable
+    {
+        return static function () use (&$tokens): mixed {
+            return array_shift($tokens);
+        };
+    }
+
     public static function deductContextFromFile(string $resourcePath): array
     {
-        $resourceFileContents = file_get_contents($resourcePath);
-
-        $tokens = token_get_all($resourceFileContents, TOKEN_PARSE);
+        $tokens = self::tokenize(token_get_all(file_get_contents($resourcePath), TOKEN_PARSE));
 
         $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
         $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
@@ -62,24 +67,65 @@ class PHP
         $context = [];
         if ($findNextToken(T_NAMESPACE) !== null) {
             $context['namespace'] = $findNextToken(T_NAME_QUALIFIED)[1];
+        } else {
+            // no namespace reinit tokens
+            $tokens = self::tokenize(token_get_all(file_get_contents($resourcePath), TOKEN_PARSE));
+
+            $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
+            $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
         }
 
         if ($findNextToken(T_RETURN) === null) {
             return $context;
         }
 
-        if ($findNextToken(T_FUNCTION, 3) !== null) {
+        if ($findNextToken(T_FUNCTION, 10) !== null) {
             $findNextToken("(");
-            $parameterTokens = $collectTokensUpTo(")");
-            if (count($parameterTokens) > 0) {
-                $context['parameters'] = '';
-                foreach ($parameterTokens as $parameterToken) {
-                    if (is_string($parameterToken)) {
-                        $context['parameters'] .= $parameterToken;
-                    } else {
-                        $context['parameters'] .= $parameterToken[1];
+            $parametersTokens = F\partial_left([__CLASS__, 'tokenCollector'], $collectTokensUpTo(")"));
+
+            $context['parameters'] = [];
+            while ($parameterTokens = $parametersTokens(",", null)) {
+                $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
+                $bufferedTokens = [];
+                while ($parameterToken = $parameterTokens()) {
+                    if ($parameterToken === '?') {
+                        $parameter['nullable'] = true;
+                        continue;
+                    }
+
+                    if (is_array($parameterToken) && $parameterToken[0] === T_WHITESPACE) {
+                        continue;
+                    }
+                    if (is_array($parameterToken) && $parameterToken[0] === T_ELLIPSIS) {
+                        $parameter['variadic'] = true;
+                        continue;
+                    }
+
+                    if (is_array($parameterToken) && $parameterToken[0] === T_VARIABLE) {
+                        $parameter['name'] = $parameterToken[1];
+                        $types = [];
+                        foreach ($bufferedTokens as $bufferedToken) {
+                            if ($bufferedToken === '|') {
+                                continue;
+                            }
+                            $types[] = $bufferedToken[1];
+                        }
+                        if (count($types) > 0) {
+                            $parameter['type'] = implode('|', $types);
+                        }
+                        break;
+                    }
+                    $bufferedTokens[] = $parameterToken;
+                }
+
+                while ($parameterToken = $parameterTokens()) {
+                    if (is_array($parameterToken)) {
+                        $code = 'return ' . $parameterToken[1] . ';';
+                        $parameter['default'] = eval($code);
                     }
                 }
+
+                $context['parameters'][] = $parameter;
             }
 
 
@@ -87,7 +133,7 @@ class PHP
             $functionSignatureTokenFinder = F\partial_left([__CLASS__, 'tokenFinder'], $functionSignatureTokens);
             if ($functionSignatureTokenFinder(":") !== null) {
                 $context['returnType'] = '';
-                while ($functionSignatureToken = array_shift($functionSignatureTokens)) {
+                while ($functionSignatureToken = $functionSignatureTokens()) {
                     $context['returnType'] .= $functionSignatureToken[1];
                 }
                 $context['returnType'] = trim($context['returnType']);
@@ -96,10 +142,9 @@ class PHP
         return $context;
     }
 
-
-    public static function tokenFinder(array &$tokens, mixed $id, ?int $maxTokenDistance = null): null|array|string
+    public static function tokenFinder(callable $tokens, mixed $id, ?int $maxTokenDistance = null): null|array|string
     {
-        while ($token = array_shift($tokens)) {
+        while ($token = $tokens()) {
             if ($maxTokenDistance > 0) {
                 $maxTokenDistance--;
             } elseif ($maxTokenDistance === 0) {
@@ -118,22 +163,29 @@ class PHP
         return null;
     }
 
-    public static function tokenCollector(array &$tokens, mixed $id): null|array
+    public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
     {
         $buffer = [];
-        while ($token = array_shift($tokens)) {
-            if (is_string($id)) {
-                if ($token === $id) {
-                    return $buffer;
-                }
-            } elseif (is_int($id)) {
-                if ($token[0] === $id) {
-                    return $buffer;
+        while ($token = $tokens()) {
+            foreach ($ids as $id) {
+                if (is_string($id)) {
+                    if ($token === $id) {
+                        return self::tokenize($buffer);
+                    }
+                } elseif (is_int($id)) {
+                    if ($token[0] === $id) {
+                        return self::tokenize($buffer);
+                    }
                 }
             }
             $buffer[] = $token;
         }
-        array_unshift($tokens, ...$buffer);
+        if (count($buffer) === 0) {
+            return null;
+        }
+        if (F\contains($ids, null)) {
+            return self::tokenize($buffer);
+        }
         return null;
     }
 }

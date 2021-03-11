@@ -5,18 +5,22 @@ namespace rikmeijer\Bootstrap\configuration;
 use rikmeijer\Bootstrap\Configuration;
 
 /** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
-return binary\configure(static function (array $configuration, string $defaultBinary = null, array $defaultArguments = []): callable {
+return binary\configure(static function (array $configuration, ?string $defaultBinary = null, string ...$defaultArguments): callable {
     $pathValidator = Configuration::pathValidator(...($defaultBinary !== null ? [$defaultBinary] : []));
     return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultArguments, $configuration) {
-        $binary = $pathValidator($configuredCommand !== null ? $configuredCommand[0] : null, $error, $context);
-        $configuredArguments = Configuration::default($defaultArguments, $configuredCommand !== null ? $configuredCommand[1] : null, $error);
+        if ($configuredCommand === null || count($configuredCommand) === 0) {
+            $binary = $pathValidator(null, $error, $context);
+            $configuredArguments = Configuration::default($defaultArguments, null, $error);
+        } else {
+            $binary = $pathValidator(array_shift($configuredCommand), $error, $context);
+            $configuredArguments = Configuration::default($defaultArguments, $configuredCommand, $error);
+        }
+
         if (file_exists($binary) === false) {
             $error('binary "' . $binary . '" does not exist');
             return static function (): void {
             };
         }
-
-
         $command = static function (string ...$arguments) use ($binary, $configuredArguments) {
             return escapeshellcmd($binary) . ' ' . implode(' ', array_map(static function (string $arg) {
                     return match (PHP_OS_FAMILY) {
