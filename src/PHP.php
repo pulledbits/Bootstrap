@@ -68,14 +68,17 @@ class PHP
             return $context;
         }
 
-        $context['parameters'] = '';
         if ($findNextToken(T_FUNCTION, 3) !== null) {
             $findNextToken("(");
-            foreach ($collectTokensUpTo(")") as $parameterToken) {
-                if (is_string($parameterToken)) {
-                    $context['parameters'] .= $parameterToken;
-                } else {
-                    $context['parameters'] .= $parameterToken[1];
+            $parameterTokens = $collectTokensUpTo(")");
+            if (count($parameterTokens) > 0) {
+                $context['parameters'] = '';
+                foreach ($parameterTokens as $parameterToken) {
+                    if (is_string($parameterToken)) {
+                        $context['parameters'] .= $parameterToken;
+                    } else {
+                        $context['parameters'] .= $parameterToken[1];
+                    }
                 }
             }
 
