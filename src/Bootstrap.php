@@ -55,13 +55,15 @@ final class Bootstrap
                 });
             }
 
-            $void = false;
+            $returns = true;
             $body = 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }';
             if (array_key_exists('returnType', $context)) {
-                $void = str_contains($context['returnType'], 'void') === false;
+                $returns = str_contains($context['returnType'], 'void');
                 $f->setReturnType($context['returnType']);
             }
-            $body .= ($void === true ? '' : 'return ');
+            if ($returns) {
+                $body .= 'return ';
+            }
             $body .= '$closure(...func_get_args());';
             $f->setBody($body);
 
