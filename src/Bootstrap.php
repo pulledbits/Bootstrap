@@ -56,15 +56,16 @@ final class Bootstrap
             }
 
             $returns = true;
-            $body = 'static $closure; if (!isset($closure)) { $closure = require ' . PHP::export($resourcePath) . '; }';
             if (array_key_exists('returnType', $context)) {
                 $returns = str_contains($context['returnType'], 'void');
                 $f->setReturnType($context['returnType']);
             }
+
+            $body = '';
             if ($returns) {
                 $body .= 'return ';
             }
-            $body .= '$closure(...func_get_args());';
+            $body .= '\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());';
             $f->setBody($body);
 
             fwrite($fp, PHP_EOL . 'namespace ' . $fqfn . ' { ');

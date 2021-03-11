@@ -4,6 +4,8 @@ namespace rikmeijer\Bootstrap;
 
 class Resource
 {
+    private static array $closures = [];
+
     public static function generate(array $resourcesPaths, callable $writer): void
     {
         foreach ($resourcesPaths as $resourcesPath => $path) {
@@ -20,5 +22,13 @@ class Resource
                 $writer($resourceFilePath, $path, $namespace);
             }
         }
+    }
+
+    public static function open(string $resourcePath): mixed
+    {
+        if (!isset(self::$closures[$resourcePath])) {
+            self::$closures[$resourcePath] = require $resourcePath;
+        }
+        return self::$closures[$resourcePath];
     }
 }
