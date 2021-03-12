@@ -52,7 +52,7 @@ class Configuration
         return $value ?? $defaultValue ?? $error('is not set and has no default value');
     }
 
-    public static function pathValidator(?string ...$defaultValue): callable
+    public static function pathValidator(?string $defaultValue): callable
     {
         return partial_left(static function (?string $defaultValue, mixed $value, callable $error, array $context) {
             if ($value === null) {
@@ -65,12 +65,12 @@ class Configuration
                 return Path::join($context['configuration-path'], $value);
             }
             return $value;
-        }, count($defaultValue) > 0 ? implode(DIRECTORY_SEPARATOR, $defaultValue) : null);
+        }, $defaultValue);
     }
 
-    public static function fileValidator(?string ...$defaultValue): callable
+    public static function fileValidator(?string $defaultValue): callable
     {
-        $pathValidator = self::pathValidator(...$defaultValue);
+        $pathValidator = self::pathValidator($defaultValue);
         return static function (mixed $value, callable $error, array $context) use ($pathValidator) {
             $path = $pathValidator($value, $error, $context);
             return static function (string $mode) use ($path) {

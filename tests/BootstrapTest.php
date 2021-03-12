@@ -8,14 +8,12 @@ use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 use rikmeijer\Bootstrap\Bootstrap;
 use rikmeijer\Bootstrap\Configuration;
-use Webmozart\PathUtil\Path;
 use function fread;
 use function fwrite;
 
 final class BootstrapTest extends TestCase
 {
     private array $streams;
-    private array $createdDirectories = [];
 
     /**
      * @dataProvider optionsProvider
@@ -91,6 +89,15 @@ final class BootstrapTest extends TestCase
         self::assertEquals($configValue, $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied($function, $configValue));
     }
 
+
+    /**
+     * @dataProvider optionsProvider
+     */
+    public function testConfig_WhenSimpleOptionOptional_Expect_ConfiguredValueOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): void
+    {
+        self::assertEquals($configValue, $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue($function, $configValue, $defaultValue));
+    }
+
     private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
     {
         // Arrange
@@ -102,7 +109,22 @@ final class BootstrapTest extends TestCase
 
         // Act
         return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
+    }
 
+
+    private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
+    {
+        // Arrange
+        self::assertNotEquals($configValue, $defaultValue);
+
+        $this->createConfig('config', ['resource' => ['option' => $configValue]]);
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $schema = ["option" => $function($defaultValue)];
+
+        // Act
+        return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
     }
 
     public function optionsProvider(): array
@@ -110,24 +132,32 @@ final class BootstrapTest extends TestCase
         return [
             "boolean" => [
                 '\rikmeijer\Bootstrap\configuration\boolean',
-                true
+                true,
+                false
             ],
             "integer" => [
                 '\rikmeijer\Bootstrap\configuration\integer',
-                1
+                1,
+                2
             ],
             "float"   => [
                 '\rikmeijer\Bootstrap\configuration\float',
-                3.14
+                3.14,
+                1.34
             ],
             "string"  => [
                 '\rikmeijer\Bootstrap\configuration\string',
-                "sometext"
+                "sometext",
+                'anytext'
             ],
             "array"   => [
                 '\rikmeijer\Bootstrap\configuration\arr',
                 [
                     "some",
+                    "value"
+                ],
+                [
+                    "any",
                     "value"
                 ]
             ]
@@ -136,7 +166,7 @@ final class BootstrapTest extends TestCase
 
     public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
     {
-        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
         $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
@@ -148,18 +178,54 @@ final class BootstrapTest extends TestCase
 
     public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
     {
-        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
         $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
         self::assertIsCallable($actual);
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
 
-    public function testWhen_ConfigurationOptionIsFileWithPHPoutput_Expect_FunctionToOpenWritableFilestream(): void
+    public function test_When_FileOptionWithPHPoutput_Expect_FunctionToOpenWritableFilestreamAndOutputPrinted(): void
     {
         $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output");
         self::assertIsCallable($actual);
         $this->expectOutputString('Hello World');
         self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
+    }
+
+    public function test_When_PathOptionWithRelativeDefaultValue_Expect_AbsoluteDefaultValueToBeAvailableInConfiguration(): void
+    {
+        $path = $this->mkdir('somedir');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\path', 'somedir');
+        self::assertEquals(fileinode($path), fileinode($actual));
+    }
+
+    public function test_When_PathOptionWithRelativeDefaultValueWithSubdirectories_Expect_JoinedAbsoluteDefaultValueToBeAvailableInConfiguration(): void
+    {
+        $path = $this->mkdir('somedir/somesubdir');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\path', 'somedir/somesubdir');
+        self::assertEquals(fileinode($path), fileinode($actual));
+    }
+
+    public function test_When_PathOptionConfigurationContainsRelativePath_Expect_AbsolutePathOfConfiguration(): void
+    {
+        $path = $this->mkdir('somefolder');
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\path', 'somefolder', 'somedir');
+        self::assertEquals(fileinode($path), fileinode($actual));
+    }
+
+
+    public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
+    {
+        $this->mkdir('somedir');
+        $f = $this->getFQFN('resource');
+        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["optionPath"]];' . PHP_EOL . '}, ["optionPath" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
+
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $this->expectError();
+        $this->expectErrorMessage('optionPath is not set and has no default value');
+        $f()->status;
     }
 
     public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void
@@ -490,64 +556,13 @@ final class BootstrapTest extends TestCase
         self::assertEquals($value, $f()->status);
     }
 
-    public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
+    private function mkdir(string $path): string
     {
-        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["optionPath"]];' . PHP_EOL . '}, ["optionPath" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectError();
-        $this->expectErrorMessage('optionPath is not set and has no default value');
-        $f()->status;
-    }
-
-    private function mkdir(string $path): void
-    {
+        $path = $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . $path;
         if (!is_dir($path) && !mkdir($path, recursive: true)) {
-            trigger_error("Unable to create " . $path);
-        } else {
-            $this->createdDirectories[] = $path;
+            trigger_error("Unable to create " . $path, E_USER_ERROR);
         }
-    }
-
-    public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
-    {
-        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]];' . PHP_EOL . '}, ["path" => ' . $this->getBootstrapFQFN('configuration\\path') . '("somedir")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir')), fileinode($f()->status));
-    }
-
-    public function testWhenConfigurationMissingPatheWithSubdirs_ExpectJoinedAbsolutePath(): void
-    {
-        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir'));
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '}, ["path" => ' . $this->getBootstrapFQFN('configuration\\path') . '("somedir", "somesubdir")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somedir', 'somesubdir')), fileinode($f()->status));
-    }
-
-    public function testWhenConfigurationRelativePath_ExpectAbsolutePath(): void
-    {
-        $this->mkdir(Path::join($this->getConfigurationRoot(), 'somefolder'));
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ["resource" => ["path" => "somefolder"]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["path"]]; ' . PHP_EOL . '}, ["path" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(fileinode(Path::join($this->getConfigurationRoot(), 'somefolder')), fileinode($f()->status));
+        return $path;
     }
 
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void
@@ -611,17 +626,14 @@ final class BootstrapTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mkdir(Path::join($this->getConfigurationRoot()));
-        $this->mkdir(Path::join($this->getConfigurationRoot(), 'bootstrap'));
+        $this->mkdir('bootstrap');
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
 
     protected function tearDown(): void
     {
         fclose($this->streams['config']);
-        foreach (array_reverse($this->createdDirectories) as $createdDirectory) {
-            $this->deleteDirRecursively($createdDirectory);
-        }
+        $this->deleteDirRecursively($this->getConfigurationRoot());
     }
 
     private function deleteDirRecursively(string $dir): void

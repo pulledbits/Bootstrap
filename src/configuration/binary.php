@@ -6,7 +6,7 @@ use rikmeijer\Bootstrap\Configuration;
 
 /** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
 return binary\configure(static function (array $configuration, ?string $defaultBinary = null, string ...$defaultArguments): callable {
-    $pathValidator = Configuration::pathValidator(...($defaultBinary !== null ? [$defaultBinary] : []));
+    $pathValidator = Configuration::pathValidator($defaultBinary);
     return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultArguments, $configuration) {
         if ($configuredCommand === null || count($configuredCommand) === 0) {
             $binary = $pathValidator(null, $error, $context);
