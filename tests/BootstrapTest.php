@@ -14,27 +14,23 @@ final class BootstrapTest extends TestCase
 {
     private array $streams;
 
-    public function testConfig_DefaultOption(): void
+    /**
+     * @dataProvider optionsProvider
+     */
+    public function testConfig_DefaultOption(string $function, mixed $configValue): void
     {
-        $f = '\\my\\own\\ns\\resource';
-
-        $this->createFunction('resource', '<?php namespace my\own\ns; ' . PHP_EOL . 'return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(true),
-            "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(1),
-            "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(3.14),
-            "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '("text"),
-            "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(["some", "value"])
-            ]);');
-
-        // Act
+        // Arrange
+        $this->createConfig('config', ['resource' => []]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertTrue($f()->configuration["optionBoolean"]);
-        self::assertEquals(1, $f()->configuration["optionInteger"]);
-        self::assertEquals(3.14, $f()->configuration["optionFloat"]);
-        self::assertEquals("text", $f()->configuration["optionString"]);
-        self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
+        $schema = ["option" => $function($configValue)];
+
+        // Act
+        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
+
+        // Assert
+        self::assertEquals($configValue, $configuration["option"]);
     }
 
     /**
@@ -76,7 +72,7 @@ final class BootstrapTest extends TestCase
 
     public function optionsProvider(): array
     {
-        return [['\rikmeijer\Bootstrap\configuration\boolean', true], ['\rikmeijer\Bootstrap\configuration\integer', 1], ['\rikmeijer\Bootstrap\configuration\float', 3.14], ['\rikmeijer\Bootstrap\configuration\string', "sometext"], ['\rikmeijer\Bootstrap\configuration\arr', ["some", "value"]]];
+        return ["boolean" => ['\rikmeijer\Bootstrap\configuration\boolean', true], "integer" => ['\rikmeijer\Bootstrap\configuration\integer', 1], "float" => ['\rikmeijer\Bootstrap\configuration\float', 3.14], "string" => ['\rikmeijer\Bootstrap\configuration\string', "sometext"], "array" => ['\rikmeijer\Bootstrap\configuration\arr', ["some", "value"]]];
     }
 
 
