@@ -7,6 +7,7 @@ use Closure;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 use rikmeijer\Bootstrap\Bootstrap;
+use rikmeijer\Bootstrap\Configuration;
 use Webmozart\PathUtil\Path;
 
 final class BootstrapTest extends TestCase
@@ -36,160 +37,48 @@ final class BootstrapTest extends TestCase
         self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
     }
 
-    public function testConfig_WhenOptionBooleanRequired_Expect_ErrorWhenNotSupplied(): void
+    /**
+     * @dataProvider optionsProvider
+     */
+    public function testConfig_WhenOptionBooleanRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
-            ]);');
-
-        // Act
+        // Arrange
+        $this->createConfig('config', ['resource' => []]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
+        $schema = ["option" => $function(null)];
+
+        // Assert
         $this->expectError();
-        $this->expectErrorMessage('optionBoolean is not set and has no default value');
-        $f()->configuration["optionBoolean"];
+        $this->expectErrorMessage('option is not set and has no default value');
+        Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
     }
 
-    public function testConfig_WhenOptionBooleanRequired_Expect_NoErrorWhenSupplied(): void
+    /**
+     * @dataProvider optionsProvider
+     */
+    public function testConfig_WhenOptionBooleanRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): void
     {
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['optionBoolean' => true]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionBoolean" => ' . $this->getBootstrapFQFN('configuration\\boolean') . '(null)
-            ]);');
-
-        // Act
+        // Arrange
+        $this->createConfig('config', ['resource' => ['option' => $configValue]]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertTrue($f()->configuration["optionBoolean"]);
-    }
-
-    public function testConfig_WhenOptionIntegerRequired_Expect_ErrorWhenNotSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
-            ]);');
+        $schema = ["option" => $function(null)];
 
         // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
+        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
 
-        $this->expectError();
-        $this->expectErrorMessage('optionInteger is not set and has no default value');
-        $f()->configuration["optionInteger"];
+        // Assert
+        self::assertEquals($configValue, $configuration["option"]);
     }
 
-    public function testConfig_WhenOptionIntegerRequired_Expect_NoErrorWhenSupplied(): void
+    public function optionsProvider(): array
     {
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['optionInteger' => 1]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionInteger" => ' . $this->getBootstrapFQFN('configuration\\integer') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(1, $f()->configuration["optionInteger"]);
+        return [['\rikmeijer\Bootstrap\configuration\boolean', true], ['\rikmeijer\Bootstrap\configuration\integer', 1], ['\rikmeijer\Bootstrap\configuration\float', 3.14], ['\rikmeijer\Bootstrap\configuration\string', "sometext"], ['\rikmeijer\Bootstrap\configuration\arr', ["some", "value"]]];
     }
 
-    public function testConfig_WhenOptionFloatRequired_Expect_ErrorWhenNotSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectError();
-        $this->expectErrorMessage('optionFloat is not set and has no default value');
-        $f()->configuration["optionFloat"];
-    }
-
-    public function testConfig_WhenOptionFloatRequired_Expect_NoErrorWhenSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['optionFloat' => 3.14]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionFloat" => ' . $this->getBootstrapFQFN('configuration\\float') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(3.14, $f()->configuration["optionFloat"]);
-    }
-
-    public function testConfig_WhenOptionStringRequired_Expect_ErrorWhenNotSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectError();
-        $this->expectErrorMessage('optionString is not set and has no default value');
-        $f()->configuration["optionString"];
-    }
-
-    public function testConfig_WhenOptionStringRequired_Expect_NoErrorWhenSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['optionString' => "text"]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionString" => ' . $this->getBootstrapFQFN('configuration\\string') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals("text", $f()->configuration["optionString"]);
-    }
-
-    public function testConfig_WhenOptionArrayRequired_Expect_ErrorWhenNotSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectError();
-        $this->expectErrorMessage('optionArray is not set and has no default value');
-        $f()->configuration["optionArray"];
-    }
-
-    public function testConfig_WhenOptionArrayRequired_Expect_NoErrorWhenSupplied(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createConfig('config', ['resource' => ['optionArray' => ["some", "value"]]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '  return (object)["configuration" => $configuration]; ' . PHP_EOL . '}, [
-            "optionArray" => ' . $this->getBootstrapFQFN('configuration\\arr') . '(null)
-            ]);');
-
-        // Act
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(["some", "value"], $f()->configuration["optionArray"]);
-    }
 
     public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenFilestream(): void
     {
@@ -619,14 +508,19 @@ final class BootstrapTest extends TestCase
         return '\\rikmeijer\\Bootstrap\\' . $function;
     }
 
+    private function getTestName(): string
+    {
+        return $this->getName(false);
+    }
+
     private function getFQFN(string $function): string
     {
-        return $this->getBootstrapFQFN($this->getName() . '\\' . $function);
+        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
     }
 
     private function getConfigurationRoot(): string
     {
-        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getName();
+        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getTestName();
     }
 
     protected function setUp(): void
@@ -641,7 +535,7 @@ final class BootstrapTest extends TestCase
     private function mkdir(string $path): void
     {
         if (!is_dir($path) && !mkdir($path, recursive: true)) {
-            trigger_error("Unable to create " . $this->getConfigurationRoot());
+            trigger_error("Unable to create " . $path);
         } else {
             $this->createdDirectories[] = $path;
         }
