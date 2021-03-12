@@ -37,8 +37,18 @@ final class BootstrapTest extends TestCase
         return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
     }
 
+    private array $preparedConfig = [];
+
+    private function prepareConfig(string $streamID, array $config): void
+    {
+        $this->preparedConfig[$streamID] = $config;
+    }
+
     private function createConfig(string $streamID, array $config): void
     {
+        if (array_key_exists($streamID, $this->preparedConfig)) {
+            $config = array_merge($config, $this->preparedConfig[$streamID]);
+        }
         ftruncate($this->streams[$streamID], 0);
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
     }
@@ -63,10 +73,10 @@ final class BootstrapTest extends TestCase
      */
     public function testConfig_WhenSimpleOptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
-        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied($function);
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied($function);
     }
 
-    private function testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
+    private function test_When_OptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
         // Arrange
         $this->createConfig('config', ['resource' => []]);
@@ -112,7 +122,7 @@ final class BootstrapTest extends TestCase
     }
 
 
-    private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
+    private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed ...$defaultValue): mixed
     {
         // Arrange
         self::assertNotEquals($configValue, $defaultValue);
@@ -121,7 +131,7 @@ final class BootstrapTest extends TestCase
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        $schema = ["option" => $function($defaultValue)];
+        $schema = ["option" => $function(...$defaultValue)];
 
         // Act
         return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
@@ -187,7 +197,7 @@ final class BootstrapTest extends TestCase
 
     public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
     {
-        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\path');
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\path');
     }
 
     public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
@@ -199,7 +209,7 @@ final class BootstrapTest extends TestCase
 
     public function test_WhenFileOptionRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
     }
 
     public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
@@ -226,9 +236,29 @@ final class BootstrapTest extends TestCase
         self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
     }
 
+    public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinaryAndReturnExitCode(): void
+    {
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                "echo test"
+            ],
+        };
+
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", "echo test");
+
+        $this->expectOutputString("Testing test test..." . PHP_EOL . 'test' . PHP_EOL);
+        self::assertEquals(0, $actual("Testing test test..."));
+    }
+
     public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void
     {
-        $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
             'Windows' => [
                 'c:\\windows\\system32\\cmd.exe',
@@ -242,14 +272,42 @@ final class BootstrapTest extends TestCase
             ],
         };
 
-        $this->createConfig('config', ['resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . '$configuration["binary"]("Testing test test...", cmd : "echo test4"); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", cmd : "echo test")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", cmd: "echo test");
 
         $this->expectOutputString("Testing test test..." . PHP_EOL . 'test4' . PHP_EOL);
-        $f();
+        self::assertEquals(0, $actual("Testing test test...", cmd: "echo test4"));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testWhen_BinarySimulation_Expect_BinaryNotReallyBeExecuted(): void
+    {
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                "echo test"
+            ],
+        };
+
+        $this->prepareConfig('config', [
+            'configuration/binary' => ['simulation' => true]
+        ]);
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", "echo test");
+
+        $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1] . ' ' . escapeshellarg($command[2]));
+        self::assertEquals(0, $actual("What is this?..."));
+    }
+
+    public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
+    {
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\binary');
     }
 
     private function getFQFN(string $function): string
@@ -271,76 +329,6 @@ final class BootstrapTest extends TestCase
         file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
-    public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinaryAndReturnExitCode(): void
-    {
-        $f = $this->getFQFN('resource');
-        $command = match (PHP_OS_FAMILY) {
-            'Windows' => [
-                'c:\\windows\\system32\\cmd.exe',
-                '/C',
-                "echo test"
-            ],
-            default => [
-                '/usr/bin/bash',
-                '-c',
-                "echo test"
-            ],
-        };
-
-        $this->createConfig('config', ['resource' => ['binary' => $command]]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : int { ' . PHP_EOL . 'return $configuration["binary"]("Testing test test..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectOutputString("Testing test test..." . PHP_EOL . 'test' . PHP_EOL);
-        self::assertEquals(0, $f());
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testWhen_BinarySimulation_Expect_BinaryNotReallyBeExecuted(): void
-    {
-        $f = $this->getFQFN('resource');
-        $command = match (PHP_OS_FAMILY) {
-            'Windows' => [
-                'c:\\windows\\system32\\cmd.exe',
-                '/C',
-                "echo test"
-            ],
-            default => [
-                '/usr/bin/bash',
-                '-c',
-                "echo test"
-            ],
-        };
-
-        $this->createConfig('config', [
-            'configuration/binary' => ['simulation' => true],
-            'resource'             => ['binary' => $command]
-        ]);
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1] . ' ' . escapeshellarg($command[2]));
-        $f();
-    }
-
-    public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
-    {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '$out = ""; foreach($configuration["binary"]() as $line) { $out = $line; } return (object)["file" => $out]; ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '()]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $this->expectError();
-        $this->expectErrorMessage('binary is not set and has no default value');
-        $f();
-    }
 
     public function testConfig_CustomOption(): void
     {
