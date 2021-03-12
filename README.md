@@ -51,7 +51,13 @@ return \rikmeijer\Bootstrap\myProject\logger\configure(static function(array $co
     return $logger;
 }, [
     "channel" => \rikmeijer\Bootstrap\myProject\string("MyApp"), // helper functions reside in project namespace (BOOTSTRAP/namespace or \rikmeijer\Bootstrap\<BASENAME_CONFIG_DIR>)
-    "no-default-option" => \rikmeijer\Bootstrap\myProject\string(null), // this will cause an error when not in config.php and thus enforcing a value (making it required)
+    "no-default-option" => \rikmeijer\Bootstrap\myProject\configuration\string(null), // this will cause an error when not in config.php and thus enforcing a value (making it required)
+    
+    "simulation" => \rikmeijer\Bootstrap\myProject\configuration\boolean(true),
+    "age" => \rikmeijer\Bootstrap\myProject\configuration\integer(1),
+    "pi" => \rikmeijer\Bootstrap\myProject\configuration\float(3.14),
+    "random-text" => \rikmeijer\Bootstrap\myProject\configuration\string("text"),
+    "list-of-items" => \rikmeijer\Bootstrap\myProject\configuration\arr(["some", "value"])
 ]);
 ```
 
