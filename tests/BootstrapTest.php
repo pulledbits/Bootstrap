@@ -9,34 +9,49 @@ use ReflectionFunction;
 use rikmeijer\Bootstrap\Bootstrap;
 use rikmeijer\Bootstrap\Configuration;
 use Webmozart\PathUtil\Path;
+use function fread;
+use function fwrite;
 
 final class BootstrapTest extends TestCase
 {
     private array $streams;
+    private array $createdDirectories = [];
 
     /**
      * @dataProvider optionsProvider
      */
-    public function testConfig_DefaultOption(string $function, mixed $configValue): void
+    public function test_WhenSimpleOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): void
     {
-        // Arrange
-        $this->createConfig('config', ['resource' => []]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
+        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration($function, $configValue, function (mixed $actual): mixed {
+            return $actual;
+        });
+    }
 
-        $schema = ["option" => $function($configValue)];
+    private function createConfig(string $streamID, array $config): void
+    {
+        ftruncate($this->streams[$streamID], 0);
+        fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
+    }
 
-        // Act
-        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
+    private function getConfigurationRoot(): string
+    {
+        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getTestName();
+    }
 
-        // Assert
-        self::assertEquals($configValue, $configuration["option"]);
+    private function getTestName(): string
+    {
+        return $this->getName(false);
+    }
+
+    private function activateBootstrap(): void
+    {
+        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
     }
 
     /**
      * @dataProvider optionsProvider
      */
-    public function testConfig_WhenOptionBooleanRequired_Expect_ErrorWhenNotSupplied(string $function): void
+    public function testConfig_WhenSimpleOptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
         // Arrange
         $this->createConfig('config', ['resource' => []]);
@@ -54,7 +69,7 @@ final class BootstrapTest extends TestCase
     /**
      * @dataProvider optionsProvider
      */
-    public function testConfig_WhenOptionBooleanRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): void
+    public function testConfig_WhenSimpleOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): void
     {
         // Arrange
         $this->createConfig('config', ['resource' => ['option' => $configValue]]);
@@ -72,55 +87,100 @@ final class BootstrapTest extends TestCase
 
     public function optionsProvider(): array
     {
-        return ["boolean" => ['\rikmeijer\Bootstrap\configuration\boolean', true], "integer" => ['\rikmeijer\Bootstrap\configuration\integer', 1], "float" => ['\rikmeijer\Bootstrap\configuration\float', 3.14], "string" => ['\rikmeijer\Bootstrap\configuration\string', "sometext"], "array" => ['\rikmeijer\Bootstrap\configuration\arr', ["some", "value"]]];
+        return [
+            "boolean" => [
+                '\rikmeijer\Bootstrap\configuration\boolean',
+                true
+            ],
+            "integer" => [
+                '\rikmeijer\Bootstrap\configuration\integer',
+                1
+            ],
+            "float"   => [
+                '\rikmeijer\Bootstrap\configuration\float',
+                3.14
+            ],
+            "string"  => [
+                '\rikmeijer\Bootstrap\configuration\string',
+                "sometext"
+            ],
+            "array"   => [
+                '\rikmeijer\Bootstrap\configuration\arr',
+                [
+                    "some",
+                    "value"
+                ]
+            ]
+        ];
     }
 
-
-    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenFilestream(): void
+    private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue, callable $actual, mixed $expected = null): void
     {
-        $somefile = Path::join($this->getConfigurationRoot(), 'somefile.txt');
-        file_put_contents($somefile, 'Hello World');
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => \fread($configuration["file"]("rb"), 11)]; ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("somefile.txt")]);');
-
+        // Arrange
+        $this->createConfig('config', ['resource' => []]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        self::assertEquals('Hello World', $f()->file);
+        $schema = ["option" => $function($configValue)];
+
+        // Act
+        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
+
+        // Assert
+        self::assertEquals($expected ?? $configValue, $actual($configuration["option"]));
     }
 
+    private function getFQFN(string $function): string
+    {
+        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
+    }
+
+    private function getBootstrapFQFN(string $function): string
+    {
+        return '\\rikmeijer\\Bootstrap\\' . $function;
+    }
+
+    private function createFunction(string $resourceName, string $content): void
+    {
+        $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
+        if (str_contains($resourceName, '/')) {
+            is_dir($directory) || mkdir($directory, 0777, true);
+        }
+        file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
+    }
+
+
+    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenReadableFilestream(): void
+    {
+        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+
+        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt', function (callable $actual): mixed {
+            return fread($actual("rb"), 11);
+        }, 'Hello World');
+    }
 
     public function testWhen_ConfigurationOptionIsFileWithPHPoutput_Expect_FunctionToOpenWritableFilestream(): void
     {
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : int { ' . PHP_EOL . '    return \fwrite($configuration["file"]("wb"), "Hello World"); ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("php://output")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
         $this->expectOutputString('Hello World');
-        self::assertEquals(11, $f());
-    }
-
-    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenWritableStream(): void
-    {
-        $somefile = Path::join($this->getConfigurationRoot(), 'somefile.txt');
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["file" => \fwrite($configuration["file"]("wb"), "Hello World dus")]; ' . PHP_EOL . '}, ["file" => ' . $this->getBootstrapFQFN('configuration\\file') . '("somefile.txt")]);');
-
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        self::assertEquals(15, $f()->file);
-        self::assertEquals('Hello World dus', file_get_contents($somefile));
+        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output", function (callable $actual): mixed {
+            return fwrite($actual("wb"), "Hello World");
+        }, 11);
     }
 
     public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', 'cmd' => "echo test"],
-            default => ['/usr/bin/bash', '-c', 'cmd' => "echo test"],
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                'cmd' => "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                'cmd' => "echo test"
+            ],
         };
 
         $this->createConfig('config', ['resource' => ['binary' => $command]]);
@@ -137,8 +197,16 @@ final class BootstrapTest extends TestCase
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', "echo test"],
-            default => ['/usr/bin/bash', '-c', "echo test"],
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                "echo test"
+            ],
         };
 
         $this->createConfig('config', ['resource' => ['binary' => $command]]);
@@ -158,11 +226,22 @@ final class BootstrapTest extends TestCase
     {
         $f = $this->getFQFN('resource');
         $command = match (PHP_OS_FAMILY) {
-            'Windows' => ['c:\\windows\\system32\\cmd.exe', '/C', "echo test"],
-            default => ['/usr/bin/bash', '-c', "echo test"],
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                "echo test"
+            ],
         };
 
-        $this->createConfig('config', ['configuration/binary' => ['simulation' => true], 'resource' => ['binary' => $command]]);
+        $this->createConfig('config', [
+            'configuration/binary' => ['simulation' => true],
+            'resource'             => ['binary' => $command]
+        ]);
         $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) : void { ' . PHP_EOL . ' $configuration["binary"]("What is this?..."); ' . PHP_EOL . '}, ["binary" => ' . $this->getBootstrapFQFN('configuration\\binary') . '("/usr/bin/bash", "-c", "echo test")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
@@ -183,21 +262,6 @@ final class BootstrapTest extends TestCase
         $this->expectError();
         $this->expectErrorMessage('binary is not set and has no default value');
         $f();
-    }
-
-    private function createConfig(string $streamID, array $config): void
-    {
-        ftruncate($this->streams[$streamID], 0);
-        fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
-    }
-
-    private function createFunction(string $resourceName, string $content): void
-    {
-        $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
-        if (str_contains($resourceName, '/')) {
-            is_dir($directory) || mkdir($directory, 0777, true);
-        }
-        file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
     public function testConfig_CustomOption(): void
@@ -269,7 +333,12 @@ final class BootstrapTest extends TestCase
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class),
+            3.14
+        ];
 
         self::assertNull($f(...$args));
     }
@@ -283,7 +352,12 @@ final class BootstrapTest extends TestCase
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class),
+            3.14
+        ];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
 
@@ -296,7 +370,11 @@ final class BootstrapTest extends TestCase
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class)
+        ];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
 
@@ -308,10 +386,13 @@ final class BootstrapTest extends TestCase
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class)];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class)
+        ];
         self::assertEquals('Yes!', $f(...$args)->status);
     }
-
 
     public function testWhen_ResourcesAreGenerated_Expect_ResourcesAvailableAsFunctions(): void
     {
@@ -319,7 +400,10 @@ final class BootstrapTest extends TestCase
         $f1 = '\\rikmeijer\\Bootstrap\\f\\test\\resourceFunc';
         $f2 = '\\rikmeijer\\Bootstrap\\f\\test\\test\\resourceFunc';
 
-        $this->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f'], 'test/test/resourceFunc' => ['status' => 'Yesss!']]);
+        $this->createConfig('config', [
+            'BOOTSTRAP'              => ['namespace' => 'rikmeijer\\Bootstrap\\f'],
+            'test/test/resourceFunc' => ['status' => 'Yesss!']
+        ]);
         $this->createFunction('resourceFunc', '<?php return ' . $f0 . '\\configure(function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);');
         $this->createFunction('test/resourceFunc', '<?php return ' . $f1 . '\\configure(function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);');
         $this->createFunction('test/test/resourceFunc', '<?php return ' . $f2 . '\\configure(function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, []);');
@@ -329,7 +413,12 @@ final class BootstrapTest extends TestCase
         self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class),
+            3.14
+        ];
 
         self::assertEquals('Yes!', $f0(...$args)->status);
         self::assertEquals('Yes!', $f1(...$args)->status);
@@ -352,13 +441,17 @@ final class BootstrapTest extends TestCase
         self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
         $this->activateBootstrap();
-        $args = ['foo', null, $this->createMock(ReflectionFunction::class), 3.14];
+        $args = [
+            'foo',
+            null,
+            $this->createMock(ReflectionFunction::class),
+            3.14
+        ];
 
         self::assertEquals('Yes!', $f0(...$args)->status);
         self::assertEquals('Yes!', $f1(...$args)->status);
         self::assertEquals('Yesss!', $f2(...$args)->status);
     }
-
 
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
     {
@@ -383,7 +476,6 @@ final class BootstrapTest extends TestCase
         self::assertEquals($value, $f()->status);
     }
 
-
     public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
     {
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'somedir'));
@@ -396,6 +488,15 @@ final class BootstrapTest extends TestCase
         $this->expectError();
         $this->expectErrorMessage('optionPath is not set and has no default value');
         $f()->status;
+    }
+
+    private function mkdir(string $path): void
+    {
+        if (!is_dir($path) && !mkdir($path, recursive: true)) {
+            trigger_error("Unable to create " . $path);
+        } else {
+            $this->createdDirectories[] = $path;
+        }
     }
 
     public function testWhenConfigurationMissingPath_ExpectConfigurationWithPathRelativeToConfigurationPath(): void
@@ -494,47 +595,11 @@ final class BootstrapTest extends TestCase
 
     }
 
-    private function activateBootstrap(): void
-    {
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
-    }
-
-    private function getBootstrapFQFN(string $function): string
-    {
-        return '\\rikmeijer\\Bootstrap\\' . $function;
-    }
-
-    private function getTestName(): string
-    {
-        return $this->getName(false);
-    }
-
-    private function getFQFN(string $function): string
-    {
-        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
-    }
-
-    private function getConfigurationRoot(): string
-    {
-        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getTestName();
-    }
-
     protected function setUp(): void
     {
         $this->mkdir(Path::join($this->getConfigurationRoot()));
         $this->mkdir(Path::join($this->getConfigurationRoot(), 'bootstrap'));
         $this->streams['config'] = fopen($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'config.php', 'wb');
-    }
-
-    private array $createdDirectories = [];
-
-    private function mkdir(string $path): void
-    {
-        if (!is_dir($path) && !mkdir($path, recursive: true)) {
-            trigger_error("Unable to create " . $path);
-        } else {
-            $this->createdDirectories[] = $path;
-        }
     }
 
     protected function tearDown(): void
