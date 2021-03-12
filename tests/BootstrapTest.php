@@ -164,34 +164,6 @@ final class BootstrapTest extends TestCase
         ];
     }
 
-    public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
-    {
-        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
-        self::assertEquals('Hello World', fread($actual("rb"), 11));
-    }
-
-    public function test_WhenFileOptionRequired_Expect_ErrorWhenNotSupplied(): void
-    {
-        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
-    }
-
-    public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
-    {
-        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
-        $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
-        self::assertIsCallable($actual);
-        self::assertEquals('Hello World', fread($actual("rb"), 11));
-    }
-
-    public function test_When_FileOptionWithPHPoutput_Expect_FunctionToOpenWritableFilestreamAndOutputPrinted(): void
-    {
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output");
-        self::assertIsCallable($actual);
-        $this->expectOutputString('Hello World');
-        self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
-    }
-
     public function test_When_PathOptionWithRelativeDefaultValue_Expect_AbsoluteDefaultValueToBeAvailableInConfiguration(): void
     {
         $path = $this->mkdir('somedir');
@@ -213,19 +185,45 @@ final class BootstrapTest extends TestCase
         self::assertEquals(fileinode($path), fileinode($actual));
     }
 
-
     public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
     {
-        $this->mkdir('somedir');
-        $f = $this->getFQFN('resource');
-        $this->createFunction('resource', '<?php return ' . $f . '\\configure(function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["optionPath"]];' . PHP_EOL . '}, ["optionPath" => ' . $this->getBootstrapFQFN('configuration\\path') . '()]);');
+        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\path');
+    }
 
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
+    public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
+    {
+        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        self::assertEquals('Hello World', fread($actual("rb"), 11));
+    }
 
-        $this->expectError();
-        $this->expectErrorMessage('optionPath is not set and has no default value');
-        $f()->status;
+    public function test_WhenFileOptionRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
+    }
+
+    public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
+        $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        self::assertIsCallable($actual);
+        self::assertEquals('Hello World', fread($actual("rb"), 11));
+    }
+
+    public function test_WhenFileOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(): void
+    {
+        file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt', 'anyfile.txt');
+        self::assertIsCallable($actual);
+        self::assertEquals('Hello World', fread($actual("rb"), 11));
+    }
+
+    public function test_When_FileOptionWithPHPoutput_Expect_FunctionToOpenWritableFilestreamAndOutputPrinted(): void
+    {
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output");
+        self::assertIsCallable($actual);
+        $this->expectOutputString('Hello World');
+        self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
     }
 
     public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void
