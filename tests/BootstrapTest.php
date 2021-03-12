@@ -26,6 +26,19 @@ final class BootstrapTest extends TestCase
         self::assertEquals($configValue, $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration($function, $configValue));
     }
 
+    private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
+    {
+        // Arrange
+        $this->createConfig('config', ['resource' => []]);
+        Bootstrap::generate($this->getConfigurationRoot());
+        $this->activateBootstrap();
+
+        $schema = ["option" => $function($configValue)];
+
+        // Act
+        return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
+    }
+
     private function createConfig(string $streamID, array $config): void
     {
         ftruncate($this->streams[$streamID], 0);
@@ -78,7 +91,6 @@ final class BootstrapTest extends TestCase
         self::assertEquals($configValue, $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied($function, $configValue));
     }
 
-
     private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
     {
         // Arrange
@@ -122,39 +134,6 @@ final class BootstrapTest extends TestCase
         ];
     }
 
-    private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
-    {
-        // Arrange
-        $this->createConfig('config', ['resource' => []]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
-
-        $schema = ["option" => $function($configValue)];
-
-        // Act
-        return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
-    }
-
-    private function getFQFN(string $function): string
-    {
-        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
-    }
-
-    private function getBootstrapFQFN(string $function): string
-    {
-        return '\\rikmeijer\\Bootstrap\\' . $function;
-    }
-
-    private function createFunction(string $resourceName, string $content): void
-    {
-        $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
-        if (str_contains($resourceName, '/')) {
-            is_dir($directory) || mkdir($directory, 0777, true);
-        }
-        file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
-    }
-
-
     public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
     {
         file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
@@ -174,7 +153,6 @@ final class BootstrapTest extends TestCase
         self::assertIsCallable($actual);
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
-
 
     public function testWhen_ConfigurationOptionIsFileWithPHPoutput_Expect_FunctionToOpenWritableFilestream(): void
     {
@@ -208,6 +186,25 @@ final class BootstrapTest extends TestCase
 
         $this->expectOutputString("Testing test test..." . PHP_EOL . 'test4' . PHP_EOL);
         $f();
+    }
+
+    private function getFQFN(string $function): string
+    {
+        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
+    }
+
+    private function getBootstrapFQFN(string $function): string
+    {
+        return '\\rikmeijer\\Bootstrap\\' . $function;
+    }
+
+    private function createFunction(string $resourceName, string $content): void
+    {
+        $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
+        if (str_contains($resourceName, '/')) {
+            is_dir($directory) || mkdir($directory, 0777, true);
+        }
+        file_put_contents($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php', $content);
     }
 
     public function testWhen_ConfigurationOptionIsBinary_Expect_FunctionToExecuteBinaryAndReturnExitCode(): void
