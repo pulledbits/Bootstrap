@@ -22,9 +22,8 @@ final class BootstrapTest extends TestCase
      */
     public function test_WhenSimpleOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): void
     {
-        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration($function, $configValue, function (mixed $actual): mixed {
-            return $actual;
-        });
+        // Assert
+        self::assertEquals($configValue, $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration($function, $configValue));
     }
 
     private function createConfig(string $streamID, array $config): void
@@ -53,12 +52,17 @@ final class BootstrapTest extends TestCase
      */
     public function testConfig_WhenSimpleOptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
+        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied($function);
+    }
+
+    private function testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
+    {
         // Arrange
         $this->createConfig('config', ['resource' => []]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        $schema = ["option" => $function(null)];
+        $schema = ["option" => $function()];
 
         // Assert
         $this->expectError();
@@ -71,18 +75,22 @@ final class BootstrapTest extends TestCase
      */
     public function testConfig_WhenSimpleOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): void
     {
+        self::assertEquals($configValue, $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied($function, $configValue));
+    }
+
+
+    private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
+    {
         // Arrange
         $this->createConfig('config', ['resource' => ['option' => $configValue]]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        $schema = ["option" => $function(null)];
+        $schema = ["option" => $function()];
 
         // Act
-        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
+        return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
 
-        // Assert
-        self::assertEquals($configValue, $configuration["option"]);
     }
 
     public function optionsProvider(): array
@@ -114,7 +122,7 @@ final class BootstrapTest extends TestCase
         ];
     }
 
-    private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue, callable $actual, mixed $expected = null): void
+    private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
     {
         // Arrange
         $this->createConfig('config', ['resource' => []]);
@@ -124,10 +132,7 @@ final class BootstrapTest extends TestCase
         $schema = ["option" => $function($configValue)];
 
         // Act
-        $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
-
-        // Assert
-        self::assertEquals($expected ?? $configValue, $actual($configuration["option"]));
+        return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
     }
 
     private function getFQFN(string $function): string
@@ -150,21 +155,33 @@ final class BootstrapTest extends TestCase
     }
 
 
-    public function testWhen_ConfigurationOptionIsFile_Expect_FunctionToOpenReadableFilestream(): void
+    public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
     {
         file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
-
-        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt', function (callable $actual): mixed {
-            return fread($actual("rb"), 11);
-        }, 'Hello World');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
+
+    public function test_WhenFileOptionRequired_Expect_ErrorWhenNotSupplied(): void
+    {
+        $this->testConfig_WhenOptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
+    }
+
+    public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
+    {
+        file_put_contents(Path::join($this->getConfigurationRoot(), 'somefile.txt'), 'Hello World');
+        $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        self::assertIsCallable($actual);
+        self::assertEquals('Hello World', fread($actual("rb"), 11));
+    }
+
 
     public function testWhen_ConfigurationOptionIsFileWithPHPoutput_Expect_FunctionToOpenWritableFilestream(): void
     {
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output");
+        self::assertIsCallable($actual);
         $this->expectOutputString('Hello World');
-        $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output", function (callable $actual): mixed {
-            return fwrite($actual("wb"), "Hello World");
-        }, 11);
+        self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
     }
 
     public function testWhen_ConfigurationOptionIsBinaryAndNamedArgumentsAreConfigured_Expect_OnlyThoseToBeReplaced(): void

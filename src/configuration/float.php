@@ -2,7 +2,7 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
-return static function (?float $defaultValue): callable {
+return static function (?float $defaultValue = null): callable {
     /** @noinspection PhpUndefinedFunctionInspection */
     return mixed($defaultValue);
 };
