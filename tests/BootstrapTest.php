@@ -311,11 +311,6 @@ final class BootstrapTest extends TestCase
         $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\binary');
     }
 
-    private function getFQFN(string $function): string
-    {
-        return $this->getBootstrapFQFN($this->getTestName() . '\\' . $function);
-    }
-
     private function getBootstrapFQFN(string $function): string
     {
         return '\\rikmeijer\\Bootstrap\\' . $function;
@@ -331,7 +326,7 @@ final class BootstrapTest extends TestCase
         file_put_contents($file, $content);
 
         $context = PHP::deductContextFromFile($file);
-        return (array_key_exists('namespace', $context) ? '\\' . $context['namespace'] . '\\' . $resourceName : $this->getFQFN($resourceName));
+        return (array_key_exists('namespace', $context) ? '\\' . $context['namespace'] : $this->getBootstrapFQFN($this->getTestName())) . '\\' . $resourceName;
     }
 
     public function test_When_CustomOptionsAreConfigured_Expect_IgnoredIfNotInSchema(): void
