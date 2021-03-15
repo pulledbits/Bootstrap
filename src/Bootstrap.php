@@ -25,10 +25,14 @@ final class Bootstrap
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate($resources, static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $fp) {
             $identifier = basename($resourcePath, '.php');
+            $configSection = '';
+            if ($group !== '') {
+                $configSection = $group . '/';
+            }
+            $configSection .= $identifier;
 
             $context = PHP::deductContextFromFile($resourcePath);
 
-            $configSection = '';
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
             } elseif ($groupNamespace !== '') {
@@ -39,10 +43,6 @@ final class Bootstrap
             $fqfn = $resourceNS . '\\' . $identifier;
             $f = new GlobalFunction(F\last(explode('\\', $fqfn)));
 
-            if ($group !== '') {
-                $configSection = $group . '/';
-            }
-            $configSection .= $identifier;
             if (array_key_exists('parameters', $context)) {
                 F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
                     if ($index === 0 && str_contains($contextParameter['name'], '$configuration')) {
