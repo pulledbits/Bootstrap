@@ -59,7 +59,13 @@ class PHP
 
     public static function deductContextFromFile(string $resourcePath): array
     {
-        $tokens = self::tokenize(token_get_all(file_get_contents($resourcePath), TOKEN_PARSE));
+        return self::deductContextFromString(file_get_contents($resourcePath));
+
+    }
+
+    public static function deductContextFromString(string $code): array
+    {
+        $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
 
         $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
         $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
@@ -69,7 +75,7 @@ class PHP
             $context['namespace'] = $findNextToken(T_NAME_QUALIFIED)[1];
         } else {
             // no namespace reinit tokens
-            $tokens = self::tokenize(token_get_all(file_get_contents($resourcePath), TOKEN_PARSE));
+            $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
 
             $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
             $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
