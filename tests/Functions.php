@@ -32,5 +32,6 @@ final class Functions
         }
         ftruncate($this->streams[$streamID], 0);
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
+        putenv('BOOTSTRAP_CONFIGURATION_PATH=' . $this->root);
     }
 }

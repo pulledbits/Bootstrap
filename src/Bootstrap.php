@@ -4,26 +4,50 @@ namespace rikmeijer\Bootstrap;
 
 use Functional as F;
 use Nette\PhpGenerator\GlobalFunction;
+use Webmozart\PathUtil\Path;
 
 final class Bootstrap
 {
+    private static function resources(string $configurationPath): array
+    {
+        return [
+            __DIR__                                                => 'configuration',
+            $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap' => ''
+        ];
+    }
+
+    public static function configure(callable $function, array $schema): callable
+    {
+        $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
+        $resourcePath = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"];
+        $configSection = '';
+        foreach (self::resources($configurationPath) as $resourcesPath => $path) {
+            if (Path::isBasePath($resourcesPath . DIRECTORY_SEPARATOR . $path, $resourcePath)) {
+                $configSection = substr(Path::makeRelative($resourcePath, $resourcesPath . DIRECTORY_SEPARATOR . $path), 0, -4);
+                break;
+            }
+        }
+        return F\partial_left($function, Configuration::validate($schema, $configurationPath, $configSection));
+    }
+
+
     public static function generate(string $configurationPath): void
     {
-        $resources = [__DIR__ => 'configuration'];
-        $schema = ['path' => Configuration::pathValidator('bootstrap'), 'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
-            if ($value !== null) {
-                $groupNamespace = '';
-                return $value;
-            }
-            return $defaultValue;
-        }, __NAMESPACE__ . '\\' . basename($configurationPath))];
+        $schema = [
+            'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
+                if ($value !== null) {
+                    $groupNamespace = '';
+                    return $value;
+                }
+                return $defaultValue;
+            }, __NAMESPACE__ . '\\' . basename($configurationPath))
+        ];
         $bootstrapConfig = Configuration::validate($schema, $configurationPath, 'BOOTSTRAP');
-        $resources[$bootstrapConfig['path']] = '';
 
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate($resources, static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $fp) {
+        Resource::generate(self::resources($configurationPath), static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $fp) {
             $identifier = basename($resourcePath, '.php');
             $configSection = '';
             if ($group !== '') {
