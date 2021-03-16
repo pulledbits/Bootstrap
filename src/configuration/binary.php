@@ -5,15 +5,16 @@ namespace rikmeijer\Bootstrap\configuration;
 use rikmeijer\Bootstrap\Configuration;
 
 /** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
-return binary\configure(static function (array $configuration, ?string $defaultBinary = null, string ...$defaultArguments): callable {
+return binary\configure(static function (array $configuration, array $defaultCommand = []): callable {
+    $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = Configuration::pathValidator($defaultBinary);
-    return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultArguments, $configuration) {
+    return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultCommand, $configuration) {
         if ($configuredCommand === null || count($configuredCommand) === 0) {
             $binary = $pathValidator(null, $error, $context);
-            $configuredArguments = Configuration::default($defaultArguments, null, $error);
+            $configuredArguments = Configuration::default($defaultCommand, null, $error);
         } else {
             $binary = $pathValidator(array_shift($configuredCommand), $error, $context);
-            $configuredArguments = Configuration::default($defaultArguments, $configuredCommand, $error);
+            $configuredArguments = Configuration::default($defaultCommand, $configuredCommand, $error);
         }
 
         if (file_exists($binary) === false) {

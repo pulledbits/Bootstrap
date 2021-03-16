@@ -107,7 +107,7 @@ final class BootstrapTest extends TestCase
     }
 
 
-    private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed ...$defaultValue): mixed
+    private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
     {
         // Arrange
         self::assertNotEquals($configValue, $defaultValue);
@@ -116,7 +116,7 @@ final class BootstrapTest extends TestCase
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
 
-        $schema = ["option" => $function(...$defaultValue)];
+        $schema = ["option" => $function($defaultValue)];
 
         // Act
         return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
@@ -236,7 +236,11 @@ final class BootstrapTest extends TestCase
             ],
         };
 
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", "echo test");
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+            "/usr/bin/bash",
+            "-c",
+            "echo test"
+        ]);
 
         $this->expectOutputString("Testing test test..." . PHP_EOL . 'test' . PHP_EOL);
         self::assertEquals(0, $actual("Testing test test..."));
@@ -257,7 +261,11 @@ final class BootstrapTest extends TestCase
             ],
         };
 
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", cmd: "echo test");
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+            "/usr/bin/bash",
+            "-c",
+            'cmd' => "echo test"
+        ]);
 
         $this->expectOutputString("Testing test test..." . PHP_EOL . 'test4' . PHP_EOL);
         self::assertEquals(0, $actual("Testing test test...", cmd: "echo test4"));
@@ -284,7 +292,11 @@ final class BootstrapTest extends TestCase
         $this->functions->prepareConfig('config', [
             'configuration/binary' => ['simulation' => true]
         ]);
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, "/usr/bin/bash", "-c", "echo test");
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+            "/usr/bin/bash",
+            "-c",
+            "echo test"
+        ]);
 
         $this->expectOutputString("What is this?..." . PHP_EOL . '(s) ' . escapeshellcmd($command[0]) . ' ' . $command[1] . ' ' . escapeshellarg($command[2]));
         self::assertEquals(0, $actual("What is this?..."));
