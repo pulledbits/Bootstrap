@@ -68,16 +68,17 @@ final class Bootstrap
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
         Resource::generate(self::resources($configurationPath), static function (string $resourcePath, string $groupNamespace) use ($bootstrapConfig, $fp) {
-            $identifier = basename($resourcePath, '.php');
+            $f = new GlobalFunction(basename($resourcePath, '.php'));
+
             $context = PHP::deductContextFromFile($resourcePath);
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
-            } elseif ($groupNamespace !== '') {
-                $resourceNS = $bootstrapConfig['namespace'] . '\\' . $groupNamespace;
             } else {
                 $resourceNS = $bootstrapConfig['namespace'];
+                if ($groupNamespace !== '') {
+                    $resourceNS .= '\\' . $groupNamespace;
+                }
             }
-            $f = new GlobalFunction($identifier);
 
             if (array_key_exists('parameters', $context)) {
                 F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
