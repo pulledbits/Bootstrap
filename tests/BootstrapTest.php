@@ -421,8 +421,8 @@ final class BootstrapTest extends TestCase
             'BOOTSTRAP'              => ['namespace' => 'rikmeijer\\Bootstrap\\f'],
             'test/test/resourceFunc' => ['status' => 'Yesss!']
         ]);
-        $f0 = $this->createFunction('resourceFunc', '<?php return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);', 'rikmeijer\\Bootstrap\\f');
-        $f1 = $this->createFunction('test/resourceFunc', '<?php return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);', 'rikmeijer\\Bootstrap\\f');
+        $f0 = $this->createFunction('resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
+        $f1 = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
         $f2 = $this->createFunction('test/test/resourceFunc', '<?php return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);', 'rikmeijer\\Bootstrap\\f');
 
         Bootstrap::generate($this->getConfigurationRoot());
@@ -445,8 +445,8 @@ final class BootstrapTest extends TestCase
     public function testWhen_ResourcesAreGeneratedWithinNS_Expect_ResourceConfigsAvailableAsFunctions(): void
     {
         $this->functions->createConfig('config', ['test/test/resourceFunc' => ['status' => 'Yesss!']]);
-        $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);');
-        $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '}, []);');
+        $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
         $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
