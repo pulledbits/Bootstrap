@@ -66,8 +66,10 @@ final class Bootstrap
 
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
-        fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate(self::resources($configurationPath), static function (string $resourcePath, string $groupNamespace) use ($bootstrapConfig, $fp) {
+        $write = F\partial_left('\\fwrite', $fp);
+
+        $write('<?php' . PHP_EOL);
+        Resource::generate(self::resources($configurationPath), F\partial_left(static function (array $bootstrapConfig, callable $write, string $resourcePath, string $groupNamespace) {
             $f = new GlobalFunction(basename($resourcePath, '.php'));
 
             $context = PHP::deductContextFromFile($resourcePath);
@@ -112,10 +114,10 @@ final class Bootstrap
             $body .= '\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());';
             $f->setBody($body);
 
-            fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
-            fwrite($fp, $f->__toString());
-            fwrite($fp, '}' . PHP_EOL);
-        });
+            $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
+            $write($f->__toString());
+            $write('}' . PHP_EOL);
+        }, $bootstrapConfig, $write));
         fclose($fp);
     }
 
