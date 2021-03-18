@@ -12,11 +12,13 @@ final class Functions
 
     public function __construct(private string $root)
     {
+        putenv('BOOTSTRAP_CONFIGURATION_PATH=' . $this->root);
         $this->streams['config'] = fopen($this->root . DIRECTORY_SEPARATOR . 'config.php', 'wb');
     }
 
     public function __destruct()
     {
+        putenv('BOOTSTRAP_CONFIGURATION_PATH');
         fclose($this->streams['config']);
     }
 
@@ -32,6 +34,5 @@ final class Functions
         }
         ftruncate($this->streams[$streamID], 0);
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
-        putenv('BOOTSTRAP_CONFIGURATION_PATH=' . $this->root);
     }
 }

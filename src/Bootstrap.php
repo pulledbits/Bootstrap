@@ -4,7 +4,6 @@ namespace rikmeijer\Bootstrap;
 
 use Functional as F;
 use Nette\PhpGenerator\GlobalFunction;
-use Webmozart\PathUtil\Path;
 
 final class Bootstrap
 {
@@ -16,18 +15,39 @@ final class Bootstrap
         ];
     }
 
-    public static function configure(callable $function, array $schema): callable
+    private static function configurationPath(): string
     {
         $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
-        $resourcePath = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"];
-        $configSection = '';
-        foreach (self::resources($configurationPath) as $resourcesPath => $path) {
-            if (Path::isBasePath($resourcesPath . DIRECTORY_SEPARATOR . $path, $resourcePath)) {
-                $configSection = substr(Path::makeRelative($resourcePath, $resourcesPath . DIRECTORY_SEPARATOR . $path), 0, -4);
-                break;
-            }
+        if ($configurationPath === false) {
+            trigger_error('EnvVar BOOTSTRAP_CONFIGURATION_PATH not found', E_USER_ERROR);
         }
-        return F\partial_left($function, Configuration::validate($schema, $configurationPath, $configSection));
+        return $configurationPath;
+    }
+
+    public static function compareInodes(string $resourceDir, string $path, string $resourcesPath): bool
+    {
+        return fileinode($resourceDir) === fileinode($resourcesPath . DIRECTORY_SEPARATOR . $path);
+    }
+
+    public static function configure(callable $function, array $schema): callable
+    {
+        $configurationPath = self::configurationPath();
+        $resources = F\partial_left('Functional\\head', self::resources($configurationPath));
+        $resourcePath = substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4);
+        $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
+        $configSection = [];
+
+        do {
+            array_unshift($configSection, array_pop($resourceDir));
+            $path = $resources(F\partial_left([
+                __CLASS__,
+                'compareInodes'
+            ], implode(DIRECTORY_SEPARATOR, $resourceDir)));
+        } while ($path === null);
+        if ($path !== '') {
+            array_unshift($configSection, $path);
+        }
+        return F\partial_left($function, Configuration::validate($schema, $configurationPath, implode('/', $configSection)));
     }
 
 
@@ -47,14 +67,8 @@ final class Bootstrap
 
         $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         fwrite($fp, '<?php' . PHP_EOL);
-        Resource::generate(self::resources($configurationPath), static function (string $resourcePath, string $group, string $groupNamespace) use ($bootstrapConfig, $fp) {
+        Resource::generate(self::resources($configurationPath), static function (string $resourcePath, string $groupNamespace) use ($bootstrapConfig, $fp) {
             $identifier = basename($resourcePath, '.php');
-            $configSection = '';
-            if ($group !== '') {
-                $configSection = $group . '/';
-            }
-            $configSection .= $identifier;
-
             $context = PHP::deductContextFromFile($resourcePath);
 
             if (array_key_exists('namespace', $context)) {
@@ -98,17 +112,6 @@ final class Bootstrap
             }
             $body .= '\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());';
             $f->setBody($body);
-
-            fwrite($fp, PHP_EOL . 'namespace ' . $fqfn . ' { ');
-            fwrite($fp, PHP_EOL . 'use \\' . Configuration::class . ';');
-            fwrite($fp, PHP_EOL . 'use Functional as F;');
-            $f_configure = new GlobalFunction('configure');
-            $f_configure->addParameter('function')->setType('callable');
-            $f_configure->addParameter('schema')->setType('array');
-            $f_configure->setBody('return F\\partial_left($function, Configuration::validate($schema, __DIR__, ' . PHP::export($configSection) . '));');
-            $f_configure->setReturnType('callable');
-            fwrite($fp, $f_configure->__toString());
-            fwrite($fp, PHP_EOL . '}');
 
             fwrite($fp, PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             fwrite($fp, $f->__toString());

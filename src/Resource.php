@@ -19,7 +19,7 @@ class Resource
             if (is_dir($resourceFilePath)) {
                 self::recurse($baseDirectory, trim($path . '/' . basename($resourceFilePath), '/'), trim($namespace . '\\' . basename($resourceFilePath), '\\'), $writer);
             } elseif (str_ends_with($resourceFilePath, '.php')) {
-                $writer($resourceFilePath, $path, $namespace);
+                $writer($resourceFilePath, $namespace);
             }
         }
     }

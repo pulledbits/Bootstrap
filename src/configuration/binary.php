@@ -2,10 +2,11 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
+use rikmeijer\Bootstrap\Bootstrap;
 use rikmeijer\Bootstrap\Configuration;
 
-/** @noinspection PhpUndefinedFunctionInspection PhpUndefinedNamespaceInspection */
-return binary\configure(static function (array $configuration, array $defaultCommand = []): callable {
+/** @noinspection PhpUndefinedFunctionInspection */
+return Bootstrap::configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = Configuration::pathValidator($defaultBinary);
     return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultCommand, $configuration) {
@@ -44,7 +45,8 @@ return binary\configure(static function (array $configuration, array $defaultCom
             }
 
             $stderr = tmpfile();
-            $descriptors = [0 => ["pipe", "rb"],    // stdin
+            $descriptors = [
+                0 => ["pipe", "rb"],    // stdin
                 1 => ["pipe", "wb"],    // stdout
                 2 => $stderr        // stderr
             ];
