@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use function rikmeijer\Bootstrap\types\string;
 
 final class Bootstrap
 {
@@ -25,13 +26,7 @@ final class Bootstrap
     public static function generate(string $configurationPath): void
     {
         $schema = [
-            'namespace' => F\partial_left(static function (string $defaultValue, $value) use (&$groupNamespace) {
-                if ($value !== null) {
-                    $groupNamespace = '';
-                    return $value;
-                }
-                return $defaultValue;
-            }, __NAMESPACE__ . '\\' . basename($configurationPath))
+            'namespace' => string(__NAMESPACE__ . '\\' . basename($configurationPath))
         ];
         $bootstrapConfig = Configuration::validate($schema, $configurationPath, 'BOOTSTRAP');
 
