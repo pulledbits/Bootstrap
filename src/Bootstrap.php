@@ -7,10 +7,10 @@ use function rikmeijer\Bootstrap\types\string;
 
 final class Bootstrap
 {
-    public static function resources(string $configurationPath): array
+    public static function resources(): array
     {
         return [
-            $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap' => ''
+            self::configurationPath() . DIRECTORY_SEPARATOR . 'bootstrap' => ''
         ];
     }
 
@@ -29,9 +29,9 @@ final class Bootstrap
         $schema = [
             'namespace' => string(__NAMESPACE__ . '\\' . basename($configurationPath))
         ];
-        $bootstrapConfig = Configuration::validate($schema, $configurationPath, 'BOOTSTRAP');
+        $bootstrapConfig = Configuration::validate($schema, 'BOOTSTRAP');
 
-        self::generateResources(self::resources($configurationPath), $bootstrapConfig['namespace'], $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php');
+        self::generateResources(self::resources(), $bootstrapConfig['namespace'], $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php');
     }
 
     public static function generateResources(array $resources, string $bootstrapNS, string $targetPath): void

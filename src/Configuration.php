@@ -9,7 +9,7 @@ use function trigger_error;
 
 class Configuration
 {
-    public static function open(string $root): callable
+    public static function open(): callable
     {
         return partial_left(static function (string $path, string $section) {
             static $config;
@@ -28,12 +28,12 @@ class Configuration
                 return [];
             }
             return is_array($config[$section]) ? $config[$section] : [];
-        }, $root . DIRECTORY_SEPARATOR . 'config.php');
+        }, Bootstrap::configurationPath() . DIRECTORY_SEPARATOR . 'config.php');
     }
 
-    public static function validate(array $schema, string $configurationPath, string $section): array
+    public static function validate(array $schema, string $section): array
     {
-        $configuration = self::open($configurationPath)($section);
+        $configuration = self::open()($section);
         if (count($schema) === 0) {
             return $configuration;
         }
@@ -42,7 +42,7 @@ class Configuration
             $error = static function (string $message) use ($key): void {
                 trigger_error($key . ' ' . $message, E_USER_ERROR);
             };
-            $map[$key] = $validator($configuration[$key] ?? null, $error, ['configuration-path' => $configurationPath]);
+            $map[$key] = $validator($configuration[$key] ?? null, $error);
         }
         return $map;
     }
@@ -54,7 +54,7 @@ class Configuration
 
     public static function pathValidator(?string $defaultValue): callable
     {
-        return partial_left(static function (?string $defaultValue, mixed $value, callable $error, array $context) {
+        return partial_left(static function (?string $defaultValue, mixed $value, callable $error) {
             if ($value === null) {
                 $value = $defaultValue ?? $error('is not set and has no default value');
             }
@@ -62,7 +62,7 @@ class Configuration
                 return $value;
             }
             if (Path::isRelative($value)) {
-                return Path::join($context['configuration-path'], $value);
+                return Path::join(Bootstrap::configurationPath(), $value);
             }
             return $value;
         }, $defaultValue);
@@ -71,8 +71,8 @@ class Configuration
     public static function fileValidator(?string $defaultValue): callable
     {
         $pathValidator = self::pathValidator($defaultValue);
-        return static function (mixed $value, callable $error, array $context) use ($pathValidator) {
-            $path = $pathValidator($value, $error, $context);
+        return static function (mixed $value, callable $error) use ($pathValidator) {
+            $path = $pathValidator($value, $error);
             return static function (string $mode) use ($path) {
                 return fopen($path, $mode);
             };

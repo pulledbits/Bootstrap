@@ -6,8 +6,7 @@ use Functional as F;
 
 function configure(callable $function, array $schema): callable
 {
-    $configurationPath = Bootstrap::configurationPath();
-    $resources = F\partial_left('Functional\\head', array_merge(Bootstrap::resources($configurationPath), [__DIR__ => 'types']));
+    $resources = F\partial_left('Functional\\head', array_merge(Bootstrap::resources(), [__DIR__ => 'types']));
     $resourcePath = substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4);
     $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
     $configSection = [];
@@ -21,5 +20,5 @@ function configure(callable $function, array $schema): callable
     if ($path !== '') {
         array_unshift($configSection, $path);
     }
-    return F\partial_left($function, Configuration::validate($schema, $configurationPath, implode('/', $configSection)));
+    return F\partial_left($function, Configuration::validate($schema, implode('/', $configSection)));
 }

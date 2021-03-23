@@ -8,12 +8,12 @@ use function rikmeijer\Bootstrap\configure;
 return configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = Configuration::pathValidator($defaultBinary);
-    return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultCommand, $configuration) {
+    return static function (?array $configuredCommand, callable $error) use ($pathValidator, $defaultCommand, $configuration) {
         if ($configuredCommand === null || count($configuredCommand) === 0) {
-            $binary = $pathValidator(null, $error, $context);
+            $binary = $pathValidator(null, $error);
             $configuredArguments = Configuration::default($defaultCommand, null, $error);
         } else {
-            $binary = $pathValidator(array_shift($configuredCommand), $error, $context);
+            $binary = $pathValidator(array_shift($configuredCommand), $error);
             $configuredArguments = Configuration::default($defaultCommand, $configuredCommand, $error);
         }
 
