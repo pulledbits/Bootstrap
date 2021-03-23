@@ -69,4 +69,9 @@ return configure(static function (array $configuration, array $defaultCommand = 
             return proc_close($process);
         };
     };
-}, ['simulation' => boolean(false), 'in' => file('php://input'), 'out' => file('php://output'), 'error' => file('php://temp'),]);
+}, [
+    'simulation' => boolean(false),
+    'in'         => file('php://input'),
+    'out'        => file('php://output'),
+    'error'      => file('php://temp'),
+], 'types/binary');

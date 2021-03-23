@@ -27,4 +27,4 @@ require BOOTSTRAP_COMPOSER_INSTALL;
 
 print 'Generating configuration types...';
 generate();
-exit('Done');
+print 'Done';
