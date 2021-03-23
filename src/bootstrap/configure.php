@@ -4,8 +4,7 @@ namespace rikmeijer\Bootstrap;
 
 use Functional as F;
 
-function configure(callable $function, array $schema, ?string $configSection = null): callable
-{
+return static function (callable $function, array $schema, ?string $configSection = null): callable {
     if ($configSection === null) {
         $configSection = (static function (string $resourcePath) {
             $resources = F\partial_left('Functional\\head', resources());
@@ -23,7 +22,7 @@ function configure(callable $function, array $schema, ?string $configSection = n
                 array_unshift($configSection, $path);
             }
             return implode('/', $configSection);
-        })(substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4));
+        })(substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]["file"], 0, -4));
     }
     return F\partial_left($function, Configuration::validate($schema, $configSection));
-}
+};

@@ -420,6 +420,7 @@ final class BootstrapTest extends TestCase
         self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
         $this->activateBootstrap();
+
         $args = [
             'foo',
             null,

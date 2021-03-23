@@ -3,20 +3,19 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use function rikmeijer\Bootstrap\Configuration\path;
 
-function generate(): void
-{
-    $configurationPath = Configuration\path();
-    $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
+return configure(static function (array $configuration): void {
+    $fp = $configuration['target']('wb');
     $write = F\partial_left('\\fwrite', $fp);
     $write('<?php declare(strict_types=1);' . PHP_EOL);
-    Resource::generate(resources(), F\partial_left(configure(static function (array $configuration, callable $write, string $resourcePath, string $groupNamespace) {
+    Resource::generate(resources(), F\partial_left(static function (string $namespace, callable $write, string $resourcePath, string $groupNamespace) {
         $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
 
         if ($functionNS !== null) {
             $resourceNS = $functionNS;
         } else {
-            $resourceNS = $configuration['namespace'];
+            $resourceNS = $namespace;
             if ($groupNamespace !== '') {
                 $resourceNS .= '\\' . $groupNamespace;
             }
@@ -25,8 +24,9 @@ function generate(): void
         $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
         $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());'));
         $write('}' . PHP_EOL);
-    }, [
-        'namespace' => types\string(__NAMESPACE__ . '\\' . basename($configurationPath))
-    ], 'BOOTSTRAP'), $write));
+    }, $configuration['namespace'], $write));
     fclose($fp);
-}
+}, [
+    'target'    => \rikmeijer\Bootstrap\types\file(path() . DIRECTORY_SEPARATOR . 'bootstrap.php'),
+    'namespace' => types\string(__NAMESPACE__ . '\\' . basename(path()))
+], 'BOOTSTRAP');

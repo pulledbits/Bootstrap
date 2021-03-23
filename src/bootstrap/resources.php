@@ -2,9 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
-function resources(): array
-{
+return static function (): array {
     return [
         Configuration\path() . DIRECTORY_SEPARATOR . 'bootstrap' => ''
     ];
-}
+};
