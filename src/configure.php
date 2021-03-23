@@ -6,7 +6,7 @@ use Functional as F;
 
 function configure(callable $function, array $schema): callable
 {
-    $resources = F\partial_left('Functional\\head', array_merge(Bootstrap::resources(), [__DIR__ => 'types']));
+    $resources = F\partial_left('Functional\\head', array_merge(resources(), [__DIR__ => 'types']));
     $resourcePath = substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4);
     $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
     $configSection = [];
