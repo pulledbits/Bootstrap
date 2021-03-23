@@ -9,7 +9,7 @@ return configure(static function (array $configuration): void {
     $fp = $configuration['target']('wb');
     $write = F\partial_left('\\fwrite', $fp);
     $write('<?php declare(strict_types=1);' . PHP_EOL);
-    Resource::generate(resources(), F\partial_left(static function (string $namespace, callable $write, string $resourcePath, string $groupNamespace) {
+    Resource::generate($configuration['resources'], '', F\partial_left(static function (string $namespace, callable $write, string $resourcePath, string $groupNamespace) {
         $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
 
         if ($functionNS !== null) {
@@ -27,6 +27,7 @@ return configure(static function (array $configuration): void {
     }, $configuration['namespace'], $write));
     fclose($fp);
 }, [
+    'resources' => types\path(path() . DIRECTORY_SEPARATOR . 'bootstrap'),
     'target'    => \rikmeijer\Bootstrap\types\file(path() . DIRECTORY_SEPARATOR . 'bootstrap.php'),
     'namespace' => types\string(__NAMESPACE__ . '\\' . basename(path()))
 ], 'BOOTSTRAP');

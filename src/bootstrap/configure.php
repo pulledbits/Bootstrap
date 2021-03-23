@@ -3,26 +3,26 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use function rikmeijer\Bootstrap\Configuration\path;
 
-return static function (callable $function, array $schema, ?string $configSection = null): callable {
+$schema = [
+    'resources' => types\path(path() . DIRECTORY_SEPARATOR . 'bootstrap')
+];
+
+return F\partial_left(static function (array $configuration, callable $function, array $schema, ?string $configSection = null): callable {
     if ($configSection === null) {
-        $configSection = (static function (string $resourcePath) {
-            $resources = F\partial_left('Functional\\head', resources());
-            $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
-
+        $configSection = (static function (int $resourcesInode, string $resourceDir) {
             $configSection = [];
-
-            do {
-                array_unshift($configSection, array_pop($resourceDir));
-                $path = $resources(F\partial_left(static function (string $resourceDir, string $path, string $resourcesPath): bool {
-                    return fileinode($resourceDir) === fileinode($resourcesPath . DIRECTORY_SEPARATOR . $path);
-                }, implode(DIRECTORY_SEPARATOR, $resourceDir)));
-            } while ($path === null);
-            if ($path !== '') {
-                array_unshift($configSection, $path);
+            while ($resourceDir !== '') {
+                $lastSlash = strrpos($resourceDir, DIRECTORY_SEPARATOR) ?: 0;
+                array_unshift($configSection, substr($resourceDir, $lastSlash + 1));
+                $resourceDir = substr($resourceDir, 0, $lastSlash);
+                if (fileinode($resourceDir) === $resourcesInode) {
+                    break;
+                }
             }
             return implode('/', $configSection);
-        })(substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]["file"], 0, -4));
+        })(fileinode($configuration['resources']), substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]["file"], 0, -4));
     }
     return F\partial_left($function, Configuration::validate($schema, $configSection));
-};
+}, Configuration::validate($schema, 'BOOTSTRAP'));

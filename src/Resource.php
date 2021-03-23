@@ -6,11 +6,9 @@ class Resource
 {
     private static array $closures = [];
 
-    public static function generate(array $resourcesPaths, callable $writer): void
+    public static function generate(string $resourcesPath, string $path, callable $writer): void
     {
-        foreach ($resourcesPaths as $resourcesPath => $path) {
-            self::recurse($resourcesPath, $path, '', $writer);
-        }
+        self::recurse($resourcesPath, $path, '', $writer);
     }
 
     private static function recurse(string $baseDirectory, string $path, string $namespace, callable $writer): void
