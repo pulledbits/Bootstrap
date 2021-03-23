@@ -3,6 +3,7 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use function rikmeijer\Bootstrap\Configuration\path;
 use function rikmeijer\Bootstrap\types\string;
 
 final class Bootstrap
@@ -10,22 +11,13 @@ final class Bootstrap
     public static function resources(): array
     {
         return [
-            self::configurationPath() . DIRECTORY_SEPARATOR . 'bootstrap' => ''
+            path() . DIRECTORY_SEPARATOR . 'bootstrap' => ''
         ];
-    }
-
-    public static function configurationPath(): string
-    {
-        $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
-        if (is_string($configurationPath) === false) {
-            trigger_error('EnvVar BOOTSTRAP_CONFIGURATION_PATH not found', E_USER_ERROR);
-        }
-        return $configurationPath;
     }
 
     public static function generate(): void
     {
-        $configurationPath = self::configurationPath();
+        $configurationPath = path();
         $schema = [
             'namespace' => string(__NAMESPACE__ . '\\' . basename($configurationPath))
         ];

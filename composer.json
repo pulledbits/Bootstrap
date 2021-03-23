@@ -19,7 +19,8 @@
     },
     "files": [
       "src/configure.php",
-      "src/configuration/generate.php",
+      "src/Configuration/generate.php",
+      "src/Configuration/path.php",
       "src/types.php"
     ]
   },

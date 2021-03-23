@@ -28,7 +28,7 @@ class Configuration
                 return [];
             }
             return is_array($config[$section]) ? $config[$section] : [];
-        }, Bootstrap::configurationPath() . DIRECTORY_SEPARATOR . 'config.php');
+        }, \rikmeijer\Bootstrap\Configuration\path() . DIRECTORY_SEPARATOR . 'config.php');
     }
 
     public static function validate(array $schema, string $section): array
@@ -62,7 +62,7 @@ class Configuration
                 return $value;
             }
             if (Path::isRelative($value)) {
-                return Path::join(Bootstrap::configurationPath(), $value);
+                return Path::join(\rikmeijer\Bootstrap\Configuration\path(), $value);
             }
             return $value;
         }, $defaultValue);
