@@ -15,8 +15,9 @@ function generate(): void
     $write('use \\' . Resource::class . ';' . PHP_EOL);
     $write('function open(string $functionIdentifier) { return Resource::open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $functionIdentifier, false); }' . PHP_EOL);
     Resource::generate([dirname(__DIR__) => 'types'], F\partial_left(static function (callable $write, string $resourcePath) {
-        $f = PHP::extractGlobalFunctionFromFile($resourcePath);
-        $write('if (function_exists("\\rikmeijer\\Bootstrap\\types\\' . basename($resourcePath, '.php') . '") === false) {' . $f('open(' . PHP::export(basename($resourcePath)) . ')(...func_get_args());') . '}');
+        $write('if (function_exists("\\rikmeijer\\Bootstrap\\types\\' . basename($resourcePath, '.php') . '") === false) {' . PHP_EOL);
+        $write(PHP::extractGlobalFunctionFromFile($resourcePath)('open(' . PHP::export(basename($resourcePath)) . ')(...func_get_args());') . PHP_EOL);
+        $write('}');
     }, $write));
     fclose($fp);
 }
