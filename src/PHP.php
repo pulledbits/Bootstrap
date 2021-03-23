@@ -5,6 +5,7 @@ namespace rikmeijer\Bootstrap;
 
 
 use Functional as F;
+use Nette\PhpGenerator\GlobalFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
@@ -57,10 +58,45 @@ class PHP
         };
     }
 
-    public static function deductContextFromFile(string $resourcePath): array
+    public static function extractGlobalFunctionFromFile(string $resourcePath, ?string &$functionNS = null): callable
     {
-        return self::deductContextFromString(file_get_contents($resourcePath));
+        $f = new GlobalFunction(basename($resourcePath, '.php'));
+        $context = self::deductContextFromString(file_get_contents($resourcePath));
 
+        if (array_key_exists('namespace', $context)) {
+            $functionNS = $context['namespace'];
+        }
+
+        if (array_key_exists('parameters', $context)) {
+            F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
+                if ($index === 0 && str_contains($contextParameter['name'], '$configuration')) {
+                    return;
+                }
+
+                if ($contextParameter['variadic']) {
+                    $f->setVariadic(true);
+                }
+                $parameter = $f->addParameter(substr($contextParameter['name'], 1));
+                $parameter->setType($contextParameter['type']);
+                $parameter->setNullable($contextParameter['nullable']);
+
+                if (array_key_exists('default', $contextParameter)) {
+                    $parameter->setDefaultValue($contextParameter['default']);
+                }
+            });
+        }
+
+        if (array_key_exists('returnType', $context)) {
+            $f->setReturnType($context['returnType']);
+        }
+        return static function (string $body) use ($f) {
+            $returnType = $f->getReturnType();
+            if ($returnType === null || $returnType !== 'void') {
+                $body = 'return ' . $body;
+            }
+            $f->setBody($body);
+            return $f;
+        };
     }
 
     public static function deductContextFromString(string $code): array

@@ -3,7 +3,6 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
-use Nette\PhpGenerator\GlobalFunction;
 
 final class Bootstrap
 {
@@ -45,11 +44,10 @@ final class Bootstrap
         $write = F\partial_left('\\fwrite', $fp);
         $write('<?php declare(strict_types=1);' . PHP_EOL);
         Resource::generate($resources, F\partial_left(static function (string $bootstrapNS, callable $write, string $resourcePath, string $groupNamespace) {
-            $f = new GlobalFunction(basename($resourcePath, '.php'));
+            $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
 
-            $context = PHP::deductContextFromFile($resourcePath);
-            if (array_key_exists('namespace', $context)) {
-                $resourceNS = $context['namespace'];
+            if ($functionNS !== null) {
+                $resourceNS = $functionNS;
             } else {
                 $resourceNS = $bootstrapNS;
                 if ($groupNamespace !== '') {
@@ -57,40 +55,8 @@ final class Bootstrap
                 }
             }
 
-            if (array_key_exists('parameters', $context)) {
-                F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
-                    if ($index === 0 && str_contains($contextParameter['name'], '$configuration')) {
-                        return;
-                    }
-
-                    if ($contextParameter['variadic']) {
-                        $f->setVariadic(true);
-                    }
-                    $parameter = $f->addParameter(substr($contextParameter['name'], 1));
-                    $parameter->setType($contextParameter['type']);
-                    $parameter->setNullable($contextParameter['nullable']);
-
-                    if (array_key_exists('default', $contextParameter)) {
-                        $parameter->setDefaultValue($contextParameter['default']);
-                    }
-                });
-            }
-
-            $returns = true;
-            if (array_key_exists('returnType', $context)) {
-                $returns = str_contains($context['returnType'], 'void') === false;
-                $f->setReturnType($context['returnType']);
-            }
-
-            $body = '';
-            if ($returns) {
-                $body .= 'return ';
-            }
-            $body .= '\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());';
-            $f->setBody($body);
-
             $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
-            $write($f->__toString());
+            $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());')->__toString());
             $write('}' . PHP_EOL);
         }, $bootstrapNS, $write));
         fclose($fp);
