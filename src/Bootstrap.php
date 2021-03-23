@@ -5,9 +5,29 @@ namespace rikmeijer\Bootstrap;
 use Functional as F;
 use Nette\PhpGenerator\GlobalFunction;
 
+function configure(callable $function, array $schema): callable
+{
+    $configurationPath = Bootstrap::configurationPath();
+    $resources = F\partial_left('Functional\\head', Bootstrap::resources($configurationPath));
+    $resourcePath = substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4);
+    $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
+    $configSection = [];
+
+    do {
+        array_unshift($configSection, array_pop($resourceDir));
+        $path = $resources(F\partial_left(static function (string $resourceDir, string $path, string $resourcesPath): bool {
+            return fileinode($resourceDir) === fileinode($resourcesPath . DIRECTORY_SEPARATOR . $path);
+        }, implode(DIRECTORY_SEPARATOR, $resourceDir)));
+    } while ($path === null);
+    if ($path !== '') {
+        array_unshift($configSection, $path);
+    }
+    return F\partial_left($function, Configuration::validate($schema, $configurationPath, implode('/', $configSection)));
+}
+
 final class Bootstrap
 {
-    private static function resources(string $configurationPath): array
+    public static function resources(string $configurationPath): array
     {
         return [
             __DIR__                                                => 'configuration',
@@ -15,7 +35,7 @@ final class Bootstrap
         ];
     }
 
-    private static function configurationPath(): string
+    public static function configurationPath(): string
     {
         $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
         if ($configurationPath === false) {
@@ -23,33 +43,6 @@ final class Bootstrap
         }
         return $configurationPath;
     }
-
-    public static function compareInodes(string $resourceDir, string $path, string $resourcesPath): bool
-    {
-        return fileinode($resourceDir) === fileinode($resourcesPath . DIRECTORY_SEPARATOR . $path);
-    }
-
-    public static function configure(callable $function, array $schema): callable
-    {
-        $configurationPath = self::configurationPath();
-        $resources = F\partial_left('Functional\\head', self::resources($configurationPath));
-        $resourcePath = substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0]["file"], 0, -4);
-        $resourceDir = preg_split('#[/\\\\]+#', $resourcePath);
-        $configSection = [];
-
-        do {
-            array_unshift($configSection, array_pop($resourceDir));
-            $path = $resources(F\partial_left([
-                __CLASS__,
-                'compareInodes'
-            ], implode(DIRECTORY_SEPARATOR, $resourceDir)));
-        } while ($path === null);
-        if ($path !== '') {
-            array_unshift($configSection, $path);
-        }
-        return F\partial_left($function, Configuration::validate($schema, $configurationPath, implode('/', $configSection)));
-    }
-
 
     public static function generate(string $configurationPath): void
     {

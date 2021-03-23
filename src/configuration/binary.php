@@ -2,11 +2,11 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
-use rikmeijer\Bootstrap\Bootstrap;
 use rikmeijer\Bootstrap\Configuration;
+use function rikmeijer\Bootstrap\configure;
 
 /** @noinspection PhpUndefinedFunctionInspection */
-return Bootstrap::configure(static function (array $configuration, array $defaultCommand = []): callable {
+return configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = Configuration::pathValidator($defaultBinary);
     return static function (?array $configuredCommand, callable $error, array $context) use ($pathValidator, $defaultCommand, $configuration) {

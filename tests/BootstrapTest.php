@@ -423,7 +423,7 @@ final class BootstrapTest extends TestCase
         ]);
         $f0 = $this->createFunction('resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
         $f1 = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);', 'rikmeijer\\Bootstrap\\f');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return ' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);', 'rikmeijer\\Bootstrap\\f');
 
         Bootstrap::generate($this->getConfigurationRoot());
 
@@ -447,7 +447,7 @@ final class BootstrapTest extends TestCase
         $this->functions->createConfig('config', ['test/test/resourceFunc' => ['status' => 'Yesss!']]);
         $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
         $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . Bootstrap::class . '::configure(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
 
@@ -478,7 +478,7 @@ final class BootstrapTest extends TestCase
     public function testWhenConfigurationSectionMatchesResourcesName_ExpectConfigurationToBePassedToBootstrapper(): void
     {
         $value = uniqid('', true);
-        $f = $this->createFunction('resource', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . Bootstrap::class . '::configure(static function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $f = $this->createFunction('resource', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -499,7 +499,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . ';  return \\' . Bootstrap::class . '::configure(static function(array $configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . ';  return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
 
         $f = $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return static function() { ' . PHP_EOL . '   return (object)["status" => ' . $dependency . '()->status]; ' . PHP_EOL . '};');
 
@@ -513,7 +513,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . Bootstrap::class . '::configure(function(array $configuration, string $extratext) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration, string $extratext) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
         $f = $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => ' . $dependency . '("Hello World!")->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
@@ -526,7 +526,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency2 = $this->createFunction('dependency2', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . Bootstrap::class . '::configure(function(array $configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency2 = $this->createFunction('dependency2', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
 
         $f = $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return static function() { ' . PHP_EOL . '   return (object)["status" => ' . $dependency2 . '()->status]; ' . PHP_EOL . '};');
 
