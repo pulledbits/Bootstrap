@@ -29,8 +29,6 @@ final class BootstrapTest extends TestCase
     {
         // Arrange
         $this->functions->createConfig('config', ['resource' => []]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
 
         $schema = ["option" => $function($configValue)];
 
@@ -65,8 +63,6 @@ final class BootstrapTest extends TestCase
     {
         // Arrange
         $this->functions->createConfig('config', ['resource' => []]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
 
         $schema = ["option" => $function()];
 
@@ -97,8 +93,6 @@ final class BootstrapTest extends TestCase
     {
         // Arrange
         $this->functions->createConfig('config', ['resource' => ['option' => $configValue]]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
 
         $schema = ["option" => $function()];
 
@@ -113,8 +107,6 @@ final class BootstrapTest extends TestCase
         self::assertNotEquals($configValue, $defaultValue);
 
         $this->functions->createConfig('config', ['resource' => ['option' => $configValue]]);
-        Bootstrap::generate($this->getConfigurationRoot());
-        $this->activateBootstrap();
 
         $schema = ["option" => $function($defaultValue)];
 
@@ -122,31 +114,33 @@ final class BootstrapTest extends TestCase
         return Configuration::validate($schema, $this->getConfigurationRoot(), 'resource')['option'];
     }
 
+    const TYPES_NS = '\rikmeijer\Bootstrap\types';
+
     public function optionsProvider(): array
     {
         return [
             "boolean" => [
-                '\rikmeijer\Bootstrap\configuration\boolean',
+                self::TYPES_NS . '\boolean',
                 true,
                 false
             ],
             "integer" => [
-                '\rikmeijer\Bootstrap\configuration\integer',
+                self::TYPES_NS . '\integer',
                 1,
                 2
             ],
             "float"   => [
-                '\rikmeijer\Bootstrap\configuration\float',
+                self::TYPES_NS . '\float',
                 3.14,
                 1.34
             ],
             "string"  => [
-                '\rikmeijer\Bootstrap\configuration\string',
+                self::TYPES_NS . '\string',
                 "sometext",
                 'anytext'
             ],
             "array"   => [
-                '\rikmeijer\Bootstrap\configuration\arr',
+                self::TYPES_NS . '\arr',
                 [
                     "some",
                     "value"
@@ -162,45 +156,45 @@ final class BootstrapTest extends TestCase
     public function test_When_PathOptionWithRelativeDefaultValue_Expect_AbsoluteDefaultValueToBeAvailableInConfiguration(): void
     {
         $path = $this->mkdir('somedir');
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\path', 'somedir');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(self::TYPES_NS . '\path', 'somedir');
         self::assertEquals(fileinode($path), fileinode($actual));
     }
 
     public function test_When_PathOptionWithRelativeDefaultValueWithSubdirectories_Expect_JoinedAbsoluteDefaultValueToBeAvailableInConfiguration(): void
     {
         $path = $this->mkdir('somedir/somesubdir');
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\path', 'somedir/somesubdir');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(self::TYPES_NS . '\path', 'somedir/somesubdir');
         self::assertEquals(fileinode($path), fileinode($actual));
     }
 
     public function test_When_PathOptionConfigurationContainsRelativePath_Expect_AbsolutePathOfConfiguration(): void
     {
         $path = $this->mkdir('somefolder');
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\path', 'somefolder', 'somedir');
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\path', 'somefolder', 'somedir');
         self::assertEquals(fileinode($path), fileinode($actual));
     }
 
     public function testWhenConfigurationRequiresPath_Expect_ErrorWhenNonSupplied(): void
     {
-        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\path');
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied(self::TYPES_NS . '\path');
     }
 
     public function test_WhenFileOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(): void
     {
         file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(self::TYPES_NS . '\file', 'somefile.txt');
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
 
     public function test_WhenFileOptionRequired_Expect_ErrorWhenNotSupplied(): void
     {
-        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\file');
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied(self::TYPES_NS . '\file');
     }
 
     public function test_WhenFileOptionRequired_Expect_NoErrorWhenSupplied(): void
     {
         file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
-        $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt');
+        $actual = $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(self::TYPES_NS . '\file', 'somefile.txt');
         self::assertIsCallable($actual);
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
@@ -208,14 +202,14 @@ final class BootstrapTest extends TestCase
     public function test_WhenFileOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(): void
     {
         file_put_contents(implode(DIRECTORY_SEPARATOR, [$this->getConfigurationRoot(), 'somefile.txt']), 'Hello World');
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\file', 'somefile.txt', 'anyfile.txt');
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\file', 'somefile.txt', 'anyfile.txt');
         self::assertIsCallable($actual);
         self::assertEquals('Hello World', fread($actual("rb"), 11));
     }
 
     public function test_When_FileOptionWithPHPoutput_Expect_FunctionToOpenWritableFilestreamAndOutputPrinted(): void
     {
-        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration('\rikmeijer\Bootstrap\configuration\file', "php://output");
+        $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(self::TYPES_NS . '\file', "php://output");
         self::assertIsCallable($actual);
         $this->expectOutputString('Hello World');
         self::assertEquals(11, fwrite($actual("wb"), "Hello World"));
@@ -235,8 +229,7 @@ final class BootstrapTest extends TestCase
                 "echo test"
             ],
         };
-
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\binary', $command, [
             "/usr/bin/bash",
             "-c",
             "echo test2"
@@ -261,7 +254,7 @@ final class BootstrapTest extends TestCase
             ],
         };
 
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\binary', $command, [
             "/usr/bin/bash",
             "-c",
             'cmd' => "echo test2"
@@ -271,9 +264,6 @@ final class BootstrapTest extends TestCase
         self::assertEquals(0, $actual("Testing test test...", cmd: "echo test4"));
     }
 
-    /**
-     * @runInSeparateProcess
-     */
     public function testWhen_BinarySimulation_Expect_BinaryNotReallyBeExecuted(): void
     {
         $command = match (PHP_OS_FAMILY) {
@@ -290,9 +280,9 @@ final class BootstrapTest extends TestCase
         };
 
         $this->functions->prepareConfig('config', [
-            'configuration/binary' => ['simulation' => true]
+            'types/binary' => ['simulation' => true]
         ]);
-        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue('\rikmeijer\Bootstrap\configuration\binary', $command, [
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\binary', $command, [
             "/usr/bin/bash",
             "-c",
             "echo test2"
@@ -304,7 +294,7 @@ final class BootstrapTest extends TestCase
 
     public function testWhen_ConfigurationOptionIsRequiredAndBinary_Expect_ErrorNoneConfigured(): void
     {
-        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied('\rikmeijer\Bootstrap\configuration\binary');
+        $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied(self::TYPES_NS . '\binary');
     }
 
     private function getBootstrapFQFN(string $function): string
@@ -343,7 +333,7 @@ final class BootstrapTest extends TestCase
         $this->functions->createConfig('config', ['resource' => ['option2' => "custom"]]);
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
-        $schema = ["option" => ('rikmeijer\Bootstrap\configuration\string')("default")];
+        $schema = ["option" => (self::TYPES_NS . '\string')("default")];
 
         $configuration = Configuration::validate($schema, $this->getConfigurationRoot(), 'resource');
 
@@ -418,12 +408,12 @@ final class BootstrapTest extends TestCase
     public function testWhen_ResourcesAreGenerated_Expect_ResourcesAvailableAsFunctions(): void
     {
         $this->functions->createConfig('config', [
-            'BOOTSTRAP'              => ['namespace' => 'rikmeijer\\Bootstrap\\f'],
+            'BOOTSTRAP'              => ['namespace' => 'rikmeijer\\Bootstrap\\f3'],
             'test/test/resourceFunc' => ['status' => 'Yesss!']
         ]);
-        $f0 = $this->createFunction('resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
-        $f1 = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return ' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);', 'rikmeijer\\Bootstrap\\f');
+        $f0 = $this->createFunction('resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
+        $f1 = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);', 'rikmeijer\\Bootstrap\\f3');
 
         Bootstrap::generate($this->getConfigurationRoot());
 
@@ -447,7 +437,7 @@ final class BootstrapTest extends TestCase
         $this->functions->createConfig('config', ['test/test/resourceFunc' => ['status' => 'Yesss!']]);
         $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
         $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("No!")]);');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
 
@@ -478,7 +468,7 @@ final class BootstrapTest extends TestCase
     public function testWhenConfigurationSectionMatchesResourcesName_ExpectConfigurationToBePassedToBootstrapper(): void
     {
         $value = uniqid('', true);
-        $f = $this->createFunction('resource', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $f = $this->createFunction('resource', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) { ' . PHP_EOL . '    return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("' . $value . '")]);');
 
         Bootstrap::generate($this->getConfigurationRoot());
         $this->activateBootstrap();
@@ -499,7 +489,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . ';  return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . ';  return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) : object {' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("' . $value . '")]);');
 
         $f = $this->createFunction('resourceDependent', '<?php ' . PHP_EOL . 'return static function() { ' . PHP_EOL . '   return (object)["status" => ' . $dependency . '()->status]; ' . PHP_EOL . '};');
 
@@ -513,7 +503,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration, string $extratext) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency = $this->createFunction('dependency', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration, string $extratext) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"] . $extratext]; ' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("' . $value . '")]);');
         $f = $this->createFunction('resourceDependent', '<?php' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => ' . $dependency . '("Hello World!")->status]; ' . PHP_EOL . '};');
 
         Bootstrap::generate($this->getConfigurationRoot());
@@ -526,7 +516,7 @@ final class BootstrapTest extends TestCase
     {
         $value = uniqid('', true);
 
-        $dependency2 = $this->createFunction('dependency2', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => \\' . $this->getBootstrapFQFN('configuration\\string') . '("' . $value . '")]);');
+        $dependency2 = $this->createFunction('dependency2', '<?php namespace ' . $this->getBootstrapFQFN($this->getTestName()) . '; return \\' . $this->getBootstrapFQFN('configure') . '(function(array $configuration) : object { ' . PHP_EOL . '   return (object)["status" => $configuration["status"]]; ' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("' . $value . '")]);');
 
         $f = $this->createFunction('resourceDependent2', '<?php ' . PHP_EOL . 'return static function() { ' . PHP_EOL . '   return (object)["status" => ' . $dependency2 . '()->status]; ' . PHP_EOL . '};');
 

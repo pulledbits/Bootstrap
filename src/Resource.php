@@ -24,9 +24,9 @@ class Resource
         }
     }
 
-    public static function open(string $resourcePath): mixed
+    public static function open(string $resourcePath, bool $cache = true): mixed
     {
-        if (!isset(self::$closures[$resourcePath])) {
+        if (!isset(self::$closures[$resourcePath]) || $cache === false) {
             self::$closures[$resourcePath] = require $resourcePath;
         }
         return self::$closures[$resourcePath];

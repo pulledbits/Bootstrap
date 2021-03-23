@@ -1,8 +1,7 @@
 <?php declare(strict_types=1);
 
-namespace rikmeijer\Bootstrap\configuration;
+namespace rikmeijer\Bootstrap\types;
 
 return static function (?bool $defaultValue = null): callable {
-    /** @noinspection PhpUndefinedFunctionInspection */
     return mixed($defaultValue);
 };

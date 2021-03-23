@@ -19,7 +19,6 @@ final class Functions
     public function __destruct()
     {
         putenv('BOOTSTRAP_CONFIGURATION_PATH');
-        fclose($this->streams['config']);
     }
 
     public function prepareConfig(string $streamID, array $config): void
@@ -34,5 +33,6 @@ final class Functions
         }
         ftruncate($this->streams[$streamID], 0);
         fwrite($this->streams[$streamID], '<?php return ' . var_export($config, true) . ';');
+        fclose($this->streams['config']);
     }
 }

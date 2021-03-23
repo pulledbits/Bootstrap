@@ -10,7 +10,6 @@ final class Bootstrap
     public static function resources(string $configurationPath): array
     {
         return [
-            __DIR__                                                => 'configuration',
             $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap' => ''
         ];
     }
@@ -18,7 +17,7 @@ final class Bootstrap
     public static function configurationPath(): string
     {
         $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
-        if ($configurationPath === false) {
+        if (is_string($configurationPath) === false) {
             trigger_error('EnvVar BOOTSTRAP_CONFIGURATION_PATH not found', E_USER_ERROR);
         }
         return $configurationPath;
@@ -37,19 +36,22 @@ final class Bootstrap
         ];
         $bootstrapConfig = Configuration::validate($schema, $configurationPath, 'BOOTSTRAP');
 
+        self::generateResources(self::resources($configurationPath), $bootstrapConfig['namespace'], $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php');
+    }
 
-        $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
+    public static function generateResources(array $resources, string $bootstrapNS, string $targetPath): void
+    {
+        $fp = fopen($targetPath, 'wb');
         $write = F\partial_left('\\fwrite', $fp);
-
-        $write('<?php' . PHP_EOL);
-        Resource::generate(self::resources($configurationPath), F\partial_left(static function (array $bootstrapConfig, callable $write, string $resourcePath, string $groupNamespace) {
+        $write('<?php declare(strict_types=1);' . PHP_EOL);
+        Resource::generate($resources, F\partial_left(static function (string $bootstrapNS, callable $write, string $resourcePath, string $groupNamespace) {
             $f = new GlobalFunction(basename($resourcePath, '.php'));
 
             $context = PHP::deductContextFromFile($resourcePath);
             if (array_key_exists('namespace', $context)) {
                 $resourceNS = $context['namespace'];
             } else {
-                $resourceNS = $bootstrapConfig['namespace'];
+                $resourceNS = $bootstrapNS;
                 if ($groupNamespace !== '') {
                     $resourceNS .= '\\' . $groupNamespace;
                 }
@@ -90,7 +92,7 @@ final class Bootstrap
             $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             $write($f->__toString());
             $write('}' . PHP_EOL);
-        }, $bootstrapConfig, $write));
+        }, $bootstrapNS, $write));
         fclose($fp);
     }
 

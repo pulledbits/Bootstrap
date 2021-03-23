@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace rikmeijer\Bootstrap\configuration;
+namespace rikmeijer\Bootstrap\types;
 
 use rikmeijer\Bootstrap\Configuration;
 

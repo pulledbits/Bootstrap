@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php declare(strict_types=1);
 
-use rikmeijer\Bootstrap\Bootstrap;
+use function rikmeijer\Bootstrap\configuration\generate;
 
 foreach ([
              __DIR__ . '/../../autoload.php',
@@ -25,10 +25,6 @@ if (!defined('BOOTSTRAP_COMPOSER_INSTALL')) {
 
 require BOOTSTRAP_COMPOSER_INSTALL;
 
-print 'Generating functions...';
-if ($argc === 2) {
-    Bootstrap::generate($argv[1]);
-} else {
-    Bootstrap::generate(getcwd());
-}
+print 'Generating configuration types...';
+generate();
 exit('Done');

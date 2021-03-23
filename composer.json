@@ -18,7 +18,9 @@
       "rikmeijer\\Bootstrap\\tests\\": "tests"
     },
     "files": [
-      "src/configure.php"
+      "src/configure.php",
+      "src/configuration/generate.php",
+      "src/types.php"
     ]
   },
   "bin": [

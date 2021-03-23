@@ -1,11 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace rikmeijer\Bootstrap\configuration;
+namespace rikmeijer\Bootstrap\types;
 
 use rikmeijer\Bootstrap\Configuration;
 use function rikmeijer\Bootstrap\configure;
 
-/** @noinspection PhpUndefinedFunctionInspection */
 return configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = Configuration::pathValidator($defaultBinary);
