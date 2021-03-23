@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php declare(strict_types=1);
 
-use rikmeijer\Bootstrap\Bootstrap;
+use function rikmeijer\Bootstrap\generate;
 
 foreach ([
              __DIR__ . '/../../autoload.php',
@@ -26,5 +26,5 @@ if (!defined('BOOTSTRAP_COMPOSER_INSTALL')) {
 require BOOTSTRAP_COMPOSER_INSTALL;
 
 print 'Generating functions...';
-Bootstrap::generate();
+generate();
 exit('Done');

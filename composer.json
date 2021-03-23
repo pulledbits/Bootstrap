@@ -20,6 +20,7 @@
     "files": [
       "src/configure.php",
       "src/resources.php",
+      "src/generate.php",
       "src/Configuration/generate.php",
       "src/Configuration/path.php",
       "src/types.php"
