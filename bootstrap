@@ -26,9 +26,5 @@ if (!defined('BOOTSTRAP_COMPOSER_INSTALL')) {
 require BOOTSTRAP_COMPOSER_INSTALL;
 
 print 'Generating functions...';
-if ($argc === 2) {
-    Bootstrap::generate($argv[1]);
-} else {
-    Bootstrap::generate(getcwd());
-}
+Bootstrap::generate();
 exit('Done');

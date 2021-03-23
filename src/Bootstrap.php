@@ -23,8 +23,9 @@ final class Bootstrap
         return $configurationPath;
     }
 
-    public static function generate(string $configurationPath): void
+    public static function generate(): void
     {
+        $configurationPath = self::configurationPath();
         $schema = [
             'namespace' => string(__NAMESPACE__ . '\\' . basename($configurationPath))
         ];
