@@ -31,15 +31,10 @@ final class Bootstrap
         ];
         $bootstrapConfig = Configuration::validate($schema, 'BOOTSTRAP');
 
-        self::generateResources(self::resources(), $bootstrapConfig['namespace'], $configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php');
-    }
-
-    public static function generateResources(array $resources, string $bootstrapNS, string $targetPath): void
-    {
-        $fp = fopen($targetPath, 'wb');
+        $fp = fopen($configurationPath . DIRECTORY_SEPARATOR . 'bootstrap.php', 'wb');
         $write = F\partial_left('\\fwrite', $fp);
         $write('<?php declare(strict_types=1);' . PHP_EOL);
-        Resource::generate($resources, F\partial_left(static function (string $bootstrapNS, callable $write, string $resourcePath, string $groupNamespace) {
+        Resource::generate(self::resources(), F\partial_left(static function (string $bootstrapNS, callable $write, string $resourcePath, string $groupNamespace) {
             $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
 
             if ($functionNS !== null) {
@@ -54,7 +49,7 @@ final class Bootstrap
             $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
             $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());'));
             $write('}' . PHP_EOL);
-        }, $bootstrapNS, $write));
+        }, $bootstrapConfig['namespace'], $write));
         fclose($fp);
     }
 
