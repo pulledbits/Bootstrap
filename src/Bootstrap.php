@@ -56,7 +56,7 @@ final class Bootstrap
             }
 
             $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
-            $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());')->__toString());
+            $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ')(...func_get_args());'));
             $write('}' . PHP_EOL);
         }, $bootstrapNS, $write));
         fclose($fp);

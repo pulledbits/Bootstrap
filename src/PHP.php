@@ -89,13 +89,13 @@ class PHP
         if (array_key_exists('returnType', $context)) {
             $f->setReturnType($context['returnType']);
         }
-        return static function (string $body) use ($f) {
+        return static function (string $body) use ($f): string {
             $returnType = $f->getReturnType();
             if ($returnType === null || $returnType !== 'void') {
                 $body = 'return ' . $body;
             }
             $f->setBody($body);
-            return $f;
+            return $f->__toString();
         };
     }
 
