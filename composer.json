@@ -16,7 +16,10 @@
     "psr-4": {
       "rikmeijer\\Bootstrap\\": "src",
       "rikmeijer\\Bootstrap\\tests\\": "tests"
-    }
+    },
+    "files": [
+      "src/configure.php"
+    ]
   },
   "bin": [
     "bootstrap"
