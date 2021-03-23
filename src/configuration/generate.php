@@ -14,7 +14,7 @@ function generate(string $from, string $namespace, bool $cached): void
     $write('namespace ' . $namespace . ';' . PHP_EOL);
     $write('use \\' . Resource::class . ';' . PHP_EOL);
     $write('function open(string $functionIdentifier) { return Resource::open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $functionIdentifier, ' . PHP::export($cached) . '); }' . PHP_EOL);
-    Resource::generate(dirname($from), basename($from), F\partial_left(static function (callable $write, string $namespace, string $resourcePath) {
+    \rikmeijer\Bootstrap\resource\generate(dirname($from))(basename($from), F\partial_left(static function (callable $write, string $namespace, string $resourcePath) {
         $write('if (function_exists("' . $namespace . '\\' . basename($resourcePath, '.php') . '") === false) {' . PHP_EOL);
         $write(PHP::extractGlobalFunctionFromFile($resourcePath)('open(' . PHP::export(basename($resourcePath)) . ')(...func_get_args());') . PHP_EOL);
         $write('}');
