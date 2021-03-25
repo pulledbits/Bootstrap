@@ -10,17 +10,6 @@ namespace rikmeijer\Bootstrap {
 
 namespace rikmeijer\Bootstrap {
 
-    if (function_exists("rikmeijer\Bootstrap\apply") === false) {
-        function apply()
-        {
-            return open('D:\\Rik Meijer\\git\\rikmeijer\\Bootstrap\\src/bootstrap\\apply.php')(...func_get_args());
-        }
-
-    }
-}
-
-namespace rikmeijer\Bootstrap {
-
     if (function_exists("rikmeijer\Bootstrap\configure") === false) {
         function configure(callable $function, array $schema, ?string $configSection = null): callable
         {
