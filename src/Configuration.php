@@ -31,7 +31,7 @@ class Configuration
         }, \rikmeijer\Bootstrap\Configuration\path() . DIRECTORY_SEPARATOR . 'config.php');
     }
 
-    public static function validate(array $schema, string $section): array
+    public static function validateSection(array $schema, string $section): array
     {
         $configuration = self::open()($section);
         if (count($schema) === 0) {

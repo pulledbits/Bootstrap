@@ -24,5 +24,5 @@ return F\partial_left(static function (array $configuration, callable $function,
             return implode('/', $configSection);
         })(fileinode($configuration['resources']), substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]["file"], 0, -4));
     }
-    return F\partial_left($function, Configuration::validate($schema, $configSection));
-}, Configuration::validate($schema, 'BOOTSTRAP'));
+    return F\partial_left($function, Configuration::validateSection($schema, $configSection));
+}, Configuration::validateSection($schema, 'BOOTSTRAP'));

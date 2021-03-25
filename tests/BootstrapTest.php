@@ -33,7 +33,7 @@ final class BootstrapTest extends TestCase
         $schema = ["option" => $function($configValue)];
 
         // Act
-        return Configuration::validate($schema, 'resource')['option'];
+        return Configuration::validateSection($schema, 'resource')['option'];
     }
 
     private function getConfigurationRoot(): string
@@ -69,7 +69,7 @@ final class BootstrapTest extends TestCase
         // Assert
         $this->expectError();
         $this->expectErrorMessage('option is not set and has no default value');
-        Configuration::validate($schema, 'resource');
+        Configuration::validateSection($schema, 'resource');
     }
 
     /**
@@ -97,7 +97,7 @@ final class BootstrapTest extends TestCase
         $schema = ["option" => $function()];
 
         // Act
-        return Configuration::validate($schema, 'resource')['option'];
+        return Configuration::validateSection($schema, 'resource')['option'];
     }
 
 
@@ -111,7 +111,7 @@ final class BootstrapTest extends TestCase
         $schema = ["option" => $function($defaultValue)];
 
         // Act
-        return Configuration::validate($schema, 'resource')['option'];
+        return Configuration::validateSection($schema, 'resource')['option'];
     }
 
     const TYPES_NS = '\rikmeijer\Bootstrap\types';
@@ -335,7 +335,7 @@ final class BootstrapTest extends TestCase
         $this->activateBootstrap();
         $schema = ["option" => (self::TYPES_NS . '\string')("default")];
 
-        $configuration = Configuration::validate($schema, 'resource');
+        $configuration = Configuration::validateSection($schema, 'resource');
 
         self::assertEquals("default", $configuration['option']);
         self::assertArrayNotHasKey('option2', $configuration);
