@@ -4,9 +4,9 @@ namespace rikmeijer\Bootstrap\resource;
 
 use function Functional\partial_right;
 
-function generate(string $resourcesPath, callable $writer): void
+function generate(callable $writer): callable
 {
-    ($generator = partial_right(static function (string $resourcesPath, string $namespace, callable $writer) use (&$generator): void {
+    $generator = partial_right(static function (string $resourcesPath, string $namespace, callable $writer) use (&$generator): void {
         foreach (glob($resourcesPath . DIRECTORY_SEPARATOR . '*') as $resourceFilePath) {
             if (is_dir($resourceFilePath)) {
                 $generator($resourceFilePath, trim($namespace . '\\' . basename($resourceFilePath), '\\'));
@@ -14,5 +14,6 @@ function generate(string $resourcesPath, callable $writer): void
                 $writer($resourceFilePath, $namespace);
             }
         }
-    }, $writer))($resourcesPath, '');
+    }, $writer);
+    return $generator;
 }
