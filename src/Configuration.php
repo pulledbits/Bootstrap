@@ -2,8 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
-use Webmozart\PathUtil\Path;
 use function Functional\partial_left;
+use function rikmeijer\Bootstrap\Configuration\path;
 use function trigger_error;
 
 
@@ -28,7 +28,7 @@ class Configuration
                 return [];
             }
             return is_array($config[$section]) ? $config[$section] : [];
-        }, \rikmeijer\Bootstrap\Configuration\path() . DIRECTORY_SEPARATOR . 'config.php');
+        }, path() . DIRECTORY_SEPARATOR . 'config.php');
     }
 
     public static function validateSection(array $schema, string $section): array
@@ -50,32 +50,5 @@ class Configuration
     public static function default(mixed $defaultValue, mixed $value, callable $error): mixed
     {
         return $value ?? $defaultValue ?? $error('is not set and has no default value');
-    }
-
-    public static function pathValidator(?string $defaultValue): callable
-    {
-        return partial_left(static function (?string $defaultValue, mixed $value, callable $error) {
-            if ($value === null) {
-                $value = $defaultValue ?? $error('is not set and has no default value');
-            }
-            if (str_starts_with($value, 'php://')) {
-                return $value;
-            }
-            if (Path::isRelative($value)) {
-                return Path::join(\rikmeijer\Bootstrap\Configuration\path(), $value);
-            }
-            return $value;
-        }, $defaultValue);
-    }
-
-    public static function fileValidator(?string $defaultValue): callable
-    {
-        $pathValidator = self::pathValidator($defaultValue);
-        return static function (mixed $value, callable $error) use ($pathValidator) {
-            $path = $pathValidator($value, $error);
-            return static function (string $mode) use ($path) {
-                return fopen($path, $mode);
-            };
-        };
     }
 }

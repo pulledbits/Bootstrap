@@ -2,8 +2,12 @@
 
 namespace rikmeijer\Bootstrap\types;
 
-use rikmeijer\Bootstrap\Configuration;
-
 return static function (?string $defaultValue = null): callable {
-    return Configuration::fileValidator($defaultValue);
+    $pathValidator = path($defaultValue);
+    return static function (mixed $value, callable $error) use ($pathValidator) {
+        $path = $pathValidator($value, $error);
+        return static function (string $mode) use ($path) {
+            return fopen($path, $mode);
+        };
+    };
 };

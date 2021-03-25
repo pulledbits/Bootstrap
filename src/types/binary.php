@@ -7,7 +7,7 @@ use function rikmeijer\Bootstrap\configure;
 
 return configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
-    $pathValidator = Configuration::pathValidator($defaultBinary);
+    $pathValidator = path($defaultBinary);
     return static function (?array $configuredCommand, callable $error) use ($pathValidator, $defaultCommand, $configuration) {
         if ($configuredCommand === null || count($configuredCommand) === 0) {
             $binary = $pathValidator(null, $error);
