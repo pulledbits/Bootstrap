@@ -8,7 +8,7 @@ function opener(callable $arguments): callable
 {
     return partial_left(static function (callable $arguments, callable $write, string $namespace) {
         $write('namespace ' . $namespace . '{' . PHP_EOL);
-        $write('function open(string $resourcePath) { return \\rikmeijer\Bootstrap\resource\\open(' . $arguments() . '); }' . PHP_EOL);
+        $write('function open(string $resourcePath) { return \\rikmeijer\Bootstrap\resource\\open(' . $arguments('$resourcePath') . '); }' . PHP_EOL);
         $write('}');
     }, $arguments);
 }

@@ -5,7 +5,7 @@ namespace rikmeijer\Bootstrap\resource;
 use rikmeijer\Bootstrap\PHP;
 use function Functional\partial_left;
 
-function generate(callable $resourceOpenerArgs, $fp, string $resourcesPath, string $namespace): void
+function generate(callable $resourceOpenerArgs, callable $fopen, string $resourcesPath, string $namespace): void
 {
     $temp = fopen('php://memory', 'wb+');
     $writer = partial_left('\\fwrite', $temp);
@@ -23,8 +23,11 @@ function generate(callable $resourceOpenerArgs, $fp, string $resourcesPath, stri
     $generator($resourcesPath, $namespace);
 
     fseek($temp, 0);
+
+    $fp = $fopen('wb');
     while (feof($temp) === false) {
         fwrite($fp, fread($temp, 1024));
     }
     fclose($temp);
+    fclose($fp);
 }
