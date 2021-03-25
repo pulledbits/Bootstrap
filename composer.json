@@ -21,6 +21,8 @@
       "src/bootstrap.php",
       "src/Configuration/generate.php",
       "src/Configuration/path.php",
+      "src/resource/generate.php",
+      "src/resource/open.php",
       "src/types.php"
     ]
   },

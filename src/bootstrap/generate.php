@@ -22,7 +22,7 @@ return configure(static function (array $configuration): void {
         }
 
         $write(PHP_EOL . 'namespace ' . $resourceNS . ' { ');
-        $write($f('\\' . Resource::class . '::open(' . PHP::export($resourcePath) . ', true)(...func_get_args());'));
+        $write($f('\\rikmeijer\Bootstrap\resource\open(' . PHP::export($resourcePath) . ', true)(...func_get_args());'));
         $write('}' . PHP_EOL);
     }, $configuration['namespace'], $write));
     fclose($fp);

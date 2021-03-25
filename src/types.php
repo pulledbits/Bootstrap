@@ -1,7 +1,9 @@
 <?php declare(strict_types=1);
 namespace rikmeijer\Bootstrap\types;
-use \rikmeijer\Bootstrap\Resource;
-function open(string $functionIdentifier) { return Resource::open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $functionIdentifier, false); }
+function open(string $functionIdentifier)
+{
+    return \rikmeijer\Bootstrap\resource\open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $functionIdentifier, false);
+}
 if (function_exists("rikmeijer\Bootstrap\types\arr") === false) {
 function arr(?array $defaultValue = null): callable
 {
