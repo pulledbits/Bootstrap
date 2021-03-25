@@ -13,8 +13,8 @@ function generate(string $from, string $namespace, bool $cached): void
     $write('namespace ' . $namespace . '{' . PHP_EOL);
     $write('function open(string $functionIdentifier) { return \\rikmeijer\Bootstrap\resource\open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $functionIdentifier, ' . PHP::export($cached) . '); }' . PHP_EOL);
     $write('}');
-    \rikmeijer\Bootstrap\resource\generate(F\partial_left(static function (callable $write, string $resourcePath, string $namespace) {
-        $write(PHP::extractGlobalFunctionFromFile($resourcePath)($namespace, 'open(' . PHP::export(basename($resourcePath)) . ')(...func_get_args());') . PHP_EOL);
+    \rikmeijer\Bootstrap\resource\generate(F\partial_left(static function (callable $write, callable $functionGenerator, string $resourcePath) {
+        $write($functionGenerator('open(' . PHP::export(basename($resourcePath)) . ')') . PHP_EOL);
     }, $write))($from, $namespace);
     fclose($fp);
 }

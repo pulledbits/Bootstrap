@@ -2,6 +2,7 @@
 
 namespace rikmeijer\Bootstrap\resource;
 
+use rikmeijer\Bootstrap\PHP;
 use function Functional\partial_right;
 
 function generate(callable $writer): callable
@@ -11,7 +12,7 @@ function generate(callable $writer): callable
             if (is_dir($resourceFilePath)) {
                 $generator($resourceFilePath, trim($namespace . '\\' . basename($resourceFilePath), '\\'));
             } elseif (str_ends_with($resourceFilePath, '.php')) {
-                $writer($resourceFilePath, $namespace);
+                $writer(PHP::extractGlobalFunctionFromFile($resourceFilePath, $namespace), $resourceFilePath);
             }
         }
     }, $writer);

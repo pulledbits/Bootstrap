@@ -9,8 +9,8 @@ return configure(static function (array $configuration): void {
     $fp = $configuration['target']('wb');
     $write = F\partial_left('\\fwrite', $fp);
     $write('<?php declare(strict_types=1);' . PHP_EOL);
-    \rikmeijer\Bootstrap\resource\generate(F\partial_left(static function (callable $write, string $resourcePath, string $namespace) {
-        $write(PHP::extractGlobalFunctionFromFile($resourcePath)($namespace, '\\rikmeijer\Bootstrap\resource\\open(' . PHP::export($resourcePath) . ', true)(...func_get_args());'));
+    \rikmeijer\Bootstrap\resource\generate(F\partial_left(static function (callable $write, callable $functionGenerator, string $resourcePath) {
+        $write($functionGenerator('\\rikmeijer\Bootstrap\resource\\open(' . PHP::export($resourcePath) . ', true)'));
     }, $write))($configuration['resources'], $configuration['namespace']);
     fclose($fp);
 }, [
