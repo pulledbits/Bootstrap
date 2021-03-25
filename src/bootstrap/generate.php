@@ -10,15 +10,7 @@ return configure(static function (array $configuration): void {
     $write = F\partial_left('\\fwrite', $fp);
     $write('<?php declare(strict_types=1);' . PHP_EOL);
     \rikmeijer\Bootstrap\resource\generate(F\partial_left(static function (callable $write, string $resourcePath, string $namespace) {
-        $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
-
-        if ($functionNS !== null) {
-            $namespace = $functionNS;
-        }
-
-        $write(PHP_EOL . 'namespace ' . $namespace . ' { ');
-        $write($f('\\rikmeijer\Bootstrap\resource\open(' . PHP::export($resourcePath) . ', true)(...func_get_args());'));
-        $write('}' . PHP_EOL);
+        $write(PHP::extractGlobalFunctionFromFile($resourcePath)($namespace, '\\rikmeijer\Bootstrap\resource\\open(' . PHP::export($resourcePath) . ', true)(...func_get_args());'));
     }, $write))($configuration['resources'], $configuration['namespace']);
     fclose($fp);
 }, [

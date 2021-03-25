@@ -58,11 +58,12 @@ class PHP
         };
     }
 
-    public static function extractGlobalFunctionFromFile(string $resourcePath, ?string &$functionNS = null): callable
+    public static function extractGlobalFunctionFromFile(string $resourcePath): callable
     {
         $f = new GlobalFunction(basename($resourcePath, '.php'));
         $context = self::deductContextFromString(file_get_contents($resourcePath));
 
+        $functionNS = null;
         if (array_key_exists('namespace', $context)) {
             $functionNS = $context['namespace'];
         }
@@ -89,13 +90,17 @@ class PHP
         if (array_key_exists('returnType', $context)) {
             $f->setReturnType($context['returnType']);
         }
-        return static function (string $body) use ($f): string {
+        return static function (string $genericNS, string $body) use ($f, $functionNS): string {
+            $namespace = $functionNS ?? $genericNS;
+
             $returnType = $f->getReturnType();
             if ($returnType === null || $returnType !== 'void') {
                 $body = 'return ' . $body;
             }
             $f->setBody($body);
-            return $f->__toString();
+
+
+            return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
         };
     }
 
