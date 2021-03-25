@@ -10,6 +10,7 @@ use rikmeijer\Bootstrap\Configuration;
 use rikmeijer\Bootstrap\PHP;
 use function fread;
 use function fwrite;
+use function rikmeijer\Bootstrap\apply;
 use function rikmeijer\Bootstrap\generate;
 
 final class BootstrapTest extends TestCase
@@ -349,6 +350,44 @@ final class BootstrapTest extends TestCase
         $this->activateBootstrap();
 
         self::assertEquals('Yes!', $f()->status);
+    }
+
+    public function test_With_CustomAppliedConfig_Expect_ConfigurationOverriddenWithAppliedConfig(): void
+    {
+        $this->functions->createConfig('config', ['resource' => ['option' => 'custom']]);
+
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) {' . PHP_EOL . '   return $configuration["option"];' . PHP_EOL . '}, ["option" => ' . self::TYPES_NS . '\\string("default")]);');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('customer', apply($f, ['option' => 'customer'])());
+    }
+
+    public function test_With_CustomAppliedUnvalidatableConfig_Expect_AppliedConfigurationSettingsIgnored(): void
+    {
+        $this->functions->createConfig('config', ['resource' => ['option' => 'custom']]);
+
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) {' . PHP_EOL . '   return $configuration;' . PHP_EOL . '}, ["option" => ' . self::TYPES_NS . '\\string("default")]);');
+
+        generate();
+        $this->activateBootstrap();
+
+        $config = apply($f, ['option2' => 'customer'])();
+        self::assertEquals('default', $config['option']);
+        self::assertArrayNotHasKey('option2', $config);
+    }
+
+    public function test_With_CustomAppliedConfigToUnconfiguredFunction_Expect_NoticeAndOriginalFunctionCalled(): void
+    {
+        $this->functions->createConfig('config', ['resource' => ['option' => 'custom']]);
+
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return "???";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('???', apply($f, ['option' => 'customer'])());
     }
 
     public function test_When_FunctionsNotGenerated_Expect_FunctionsNotExisting(): void

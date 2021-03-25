@@ -61,6 +61,9 @@ class PHP
     public static function extractGlobalFunctionFromFile(string $resourcePath, string $genericNS): string
     {
         $f = new GlobalFunction(basename($resourcePath, '.php'));
+        $_f = clone $f->cloneWithName('_' . $f->getName());
+        $_f->setReturnType('callable');
+
         $context = self::deductContextFromString(file_get_contents($resourcePath));
 
         $namespace = $genericNS;
@@ -91,14 +94,18 @@ class PHP
             $f->setReturnType($context['returnType']);
         }
 
+
         $returnType = $f->getReturnType();
-        $body = '\\' . $genericNS . '\\open(' . self::export($resourcePath) . ')';
+        $body = '(' . $_f->getName() . '())';
         if ($returnType === null || $returnType !== 'void') {
             $body = 'return ' . $body;
         }
+
+        $_f->setBody('return \\' . $genericNS . '\\open(' . self::export($resourcePath) . ');');
         $f->setBody($body . '(...func_get_args());');
 
-        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
+        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    
+        if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $_f->__toString() . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
     }
 
     public static function deductContextFromString(string $code): array

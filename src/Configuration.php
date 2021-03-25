@@ -33,7 +33,11 @@ class Configuration
 
     public static function validateSection(array $schema, string $section): array
     {
-        $configuration = self::open()($section);
+        return self::validate($schema, self::open()($section));
+    }
+
+    public static function validate(array $schema, array $configuration): array
+    {
         if (count($schema) === 0) {
             return $configuration;
         }

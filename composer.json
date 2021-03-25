@@ -19,6 +19,7 @@
     },
     "files": [
       "src/bootstrap.php",
+      "src/bootstrap/apply.php",
       "src/Configuration/generate.php",
       "src/Configuration/path.php",
       "src/resource/generate.php",

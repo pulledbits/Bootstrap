@@ -9,7 +9,7 @@ $schema = [
     'resources' => types\path(path() . DIRECTORY_SEPARATOR . 'bootstrap')
 ];
 
-return F\partial_left(static function (array $configuration, callable $function, array $schema, ?string $configSection = null): callable {
+return F\partial_left(static function (array $configuration, callable $unconfiguredFunction, array $schema, ?string $configSection = null): callable {
     if ($configSection === null) {
         $configSection = (static function (int $resourcesInode, string $resourceDir) {
             $configSection = [];
@@ -24,5 +24,6 @@ return F\partial_left(static function (array $configuration, callable $function,
             return implode('/', $configSection);
         })(fileinode($configuration['resources']), substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]["file"], 0, -4));
     }
-    return F\partial_left($function, Configuration::validateSection($schema, $configSection));
+    register($unconfiguredFunction, $schema);
+    return F\partial_left($unconfiguredFunction, Configuration::validateSection($schema, $configSection));
 }, Configuration::validateSection($schema, 'BOOTSTRAP'));
