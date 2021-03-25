@@ -8,7 +8,7 @@
       <option name="exitCodeBehavior" value="ERROR" />
       <option name="fileExtension" value="php" />
       <option name="immediateSync" value="true" />
-      <option name="name" value="types" />
+      <option name="name" value="bootstrap functions" />
       <option name="output" value="" />
       <option name="outputFilters">
         <array />
@@ -16,7 +16,7 @@
       <option name="outputFromStdout" value="false" />
       <option name="program" value="php" />
       <option name="runOnExternalChanges" value="true" />
-      <option name="scopeName" value="types" />
+      <option name="scopeName" value="closures" />
       <option name="trackOnlyRoot" value="false" />
       <option name="workingDir" value="$ProjectFileDir$" />
       <envs />

@@ -9,7 +9,7 @@ return configure(static function (array $configuration): void {
     $fp = $configuration['target']('wb');
     $write = F\partial_left('\\fwrite', $fp);
     $write('<?php declare(strict_types=1);' . PHP_EOL);
-    \rikmeijer\Bootstrap\resource\generate($configuration['resources'])('', F\partial_left(static function (string $namespace, callable $write, string $resourcePath, string $groupNamespace) {
+    \rikmeijer\Bootstrap\resource\generate($configuration['resources'], '', F\partial_left(static function (string $namespace, callable $write, string $resourcePath, string $groupNamespace) {
         $f = PHP::extractGlobalFunctionFromFile($resourcePath, $functionNS);
 
         if ($functionNS !== null) {
