@@ -23,6 +23,7 @@
       "src/Configuration/path.php",
       "src/resource/generate.php",
       "src/resource/open.php",
+      "src/resource/opener.php",
       "src/types.php"
     ]
   },

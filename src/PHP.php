@@ -58,11 +58,12 @@ class PHP
         };
     }
 
-    public static function extractGlobalFunctionFromFile(string $resourcePath, string $namespace): callable
+    public static function extractGlobalFunctionFromFile(string $resourcePath, string $genericNS): string
     {
         $f = new GlobalFunction(basename($resourcePath, '.php'));
         $context = self::deductContextFromString(file_get_contents($resourcePath));
 
+        $namespace = $genericNS;
         if (array_key_exists('namespace', $context)) {
             $namespace = $context['namespace'];
         }
@@ -89,16 +90,15 @@ class PHP
         if (array_key_exists('returnType', $context)) {
             $f->setReturnType($context['returnType']);
         }
-        return static function (string $body) use ($f, $namespace): string {
-            $returnType = $f->getReturnType();
-            if ($returnType === null || $returnType !== 'void') {
-                $body = 'return ' . $body;
-            }
-            $f->setBody($body . '(...func_get_args());');
 
+        $returnType = $f->getReturnType();
+        $body = '\\' . $genericNS . '\\open(' . self::export($resourcePath) . ')';
+        if ($returnType === null || $returnType !== 'void') {
+            $body = 'return ' . $body;
+        }
+        $f->setBody($body . '(...func_get_args());');
 
-            return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
-        };
+        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
     }
 
     public static function deductContextFromString(string $code): array

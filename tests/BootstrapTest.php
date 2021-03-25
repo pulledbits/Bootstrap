@@ -366,6 +366,7 @@ final class BootstrapTest extends TestCase
 
         generate();
         $this->activateBootstrap();
+
         $args = [
             'foo',
             null,
