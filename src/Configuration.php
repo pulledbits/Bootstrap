@@ -12,15 +12,7 @@ class Configuration
     {
         /** @noinspection PhpIncludeInspection */
         $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
-        if (is_array($config) === false) {
-            $configuration = [];
-        } elseif (array_key_exists($section, $config) === false) {
-            $configuration = [];
-        } elseif (is_array($config[$section]) === false) {
-            $configuration = [];
-        } else {
-            $configuration = $config[$section];
-        }
+        $configuration = $config[$section] ?? [];
 
         if (count($schema) === 0) {
             return $configuration;
