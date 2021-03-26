@@ -11,7 +11,7 @@ namespace rikmeijer\Bootstrap {
 namespace rikmeijer\Bootstrap {
 
     if (function_exists("rikmeijer\Bootstrap\configure") === false) {
-        function configure(callable $function, array $schema, ?string $configSection = null): callable
+        function configure()
         {
             return open('D:\\Rik Meijer\\git\\rikmeijer\\Bootstrap\\src/bootstrap\\configure.php')(...func_get_args());
         }

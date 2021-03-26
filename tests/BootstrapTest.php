@@ -10,6 +10,7 @@ use rikmeijer\Bootstrap\Configuration;
 use rikmeijer\Bootstrap\PHP;
 use function fread;
 use function fwrite;
+use function rikmeijer\Bootstrap\configure;
 use function rikmeijer\Bootstrap\generate;
 
 final class BootstrapTest extends TestCase
@@ -308,9 +309,12 @@ final class BootstrapTest extends TestCase
         $this->functions->createConfig('config', ['resource' => ['option2' => "custom"]]);
         generate();
         $this->activateBootstrap();
-        $schema = ["option" => (self::TYPES_NS . '\string')("default")];
 
-        $configuration = Configuration::validateSection($schema, 'resource');
+        $function = configure(static function (array $configuration): array {
+            return $configuration;
+        }, ["option" => (self::TYPES_NS . '\string')("default")], 'resource');
+
+        $configuration = $function();
 
         self::assertEquals("default", $configuration['option']);
         self::assertArrayNotHasKey('option2', $configuration);

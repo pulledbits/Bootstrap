@@ -3,13 +3,21 @@
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
+use function Functional\map;
+use function Functional\partial_left;
 use function rikmeijer\Bootstrap\Configuration\path;
+
+$validateSection = static function (array $schema, string $section): array {
+    /** @noinspection PhpIncludeInspection */
+    $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
+    return map($schema, partial_left([Configuration::class, 'validate'], $config[$section] ?? []));
+};
 
 $schema = [
     'resources' => types\path(path() . DIRECTORY_SEPARATOR . 'bootstrap')
 ];
 
-return F\partial_left(static function (array $configuration, callable $function, array $schema, ?string $configSection = null): callable {
+return F\partial_left(static function (array $configuration, callable $validateSection, callable $function, array $schema, ?string $configSection = null): callable {
     if ($configSection === null) {
         $configSection = (static function (int $resourcesInode, string $resourceDir) {
             $configSection = [];
@@ -24,5 +32,5 @@ return F\partial_left(static function (array $configuration, callable $function,
             return implode('/', $configSection);
         })(fileinode($configuration['resources']), substr(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]["file"], 0, -4));
     }
-    return F\partial_left($function, Configuration::validateSection($schema, $configSection));
-}, Configuration::validateSection($schema, 'BOOTSTRAP'));
+    return F\partial_left($function, $validateSection($schema, $configSection));
+}, $validateSection($schema, 'BOOTSTRAP'), $validateSection);

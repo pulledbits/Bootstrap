@@ -2,21 +2,12 @@
 
 namespace rikmeijer\Bootstrap;
 
-use function Functional\map;
 use function Functional\partial_left;
-use function rikmeijer\Bootstrap\Configuration\path;
 use function trigger_error;
 
 
 class Configuration
 {
-    public static function validateSection(array $schema, string $section): array
-    {
-        /** @noinspection PhpIncludeInspection */
-        $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
-        return map($schema, partial_left([__CLASS__, 'validate'], $config[$section] ?? []));
-    }
-
     public static function validate(array $configuration, callable $validator, string $property): mixed
     {
         return $validator($configuration[$property] ?? null, partial_left([__CLASS__, 'error'], $property));
