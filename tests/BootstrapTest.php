@@ -27,13 +27,7 @@ final class BootstrapTest extends TestCase
 
     private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
     {
-        // Arrange
-        $this->functions->createConfig('config', ['resource' => []]);
-
-        $schema = ["option" => $function($configValue)];
-
-        // Act
-        return Configuration::validateSection($schema, 'resource')['option'];
+        return Configuration::validate([], $function($configValue), 'option');
     }
 
     private function getConfigurationRoot(): string
@@ -61,15 +55,9 @@ final class BootstrapTest extends TestCase
 
     private function test_When_OptionRequired_Expect_ErrorWhenNotSupplied(string $function): void
     {
-        // Arrange
-        $this->functions->createConfig('config', ['resource' => []]);
-
-        $schema = ["option" => $function()];
-
-        // Assert
         $this->expectError();
         $this->expectErrorMessage('option is not set and has no default value');
-        Configuration::validateSection($schema, 'resource');
+        Configuration::validate([], $function(), 'option');
     }
 
     /**
@@ -91,27 +79,14 @@ final class BootstrapTest extends TestCase
 
     private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
     {
-        // Arrange
-        $this->functions->createConfig('config', ['resource' => ['option' => $configValue]]);
-
-        $schema = ["option" => $function()];
-
-        // Act
-        return Configuration::validateSection($schema, 'resource')['option'];
+        return Configuration::validate(['option' => $configValue], $function(), 'option');
     }
 
 
     private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
     {
-        // Arrange
         self::assertNotEquals($configValue, $defaultValue);
-
-        $this->functions->createConfig('config', ['resource' => ['option' => $configValue]]);
-
-        $schema = ["option" => $function($defaultValue)];
-
-        // Act
-        return Configuration::validateSection($schema, 'resource')['option'];
+        return Configuration::validate(['option' => $configValue], $function($defaultValue), 'option');
     }
 
     const TYPES_NS = '\rikmeijer\Bootstrap\types';
@@ -279,7 +254,7 @@ final class BootstrapTest extends TestCase
             ],
         };
 
-        $this->functions->prepareConfig('config', [
+        $this->functions->createConfig('config', [
             'types/binary' => ['simulation' => true]
         ]);
         $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\binary', $command, [
