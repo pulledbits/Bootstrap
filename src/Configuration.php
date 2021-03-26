@@ -19,9 +19,4 @@ class Configuration
     {
         trigger_error($property . ' ' . $message, E_USER_ERROR);
     }
-
-    public static function default(mixed $defaultValue, mixed $value, callable $error): mixed
-    {
-        return $value ?? $defaultValue ?? $error('is not set and has no default value');
-    }
 }

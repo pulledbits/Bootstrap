@@ -3,8 +3,9 @@
 namespace rikmeijer\Bootstrap\types;
 
 use Functional as F;
-use rikmeijer\Bootstrap\Configuration;
 
 return static function (mixed $defaultValue): callable {
-    return F\partial_left([Configuration::class, 'default'], $defaultValue);
+    return F\partial_left(static function (mixed $defaultValue, mixed $value, callable $error): mixed {
+        return $value ?? $defaultValue ?? $error('is not set and has no default value');
+    }, $defaultValue);
 };
