@@ -2,6 +2,8 @@
 
 namespace rikmeijer\Bootstrap;
 
+use function Functional\map;
+use function Functional\partial_left;
 use function rikmeijer\Bootstrap\Configuration\path;
 use function trigger_error;
 
@@ -17,14 +19,14 @@ class Configuration
         if (count($schema) === 0) {
             return $configuration;
         }
-        $map = [];
-        foreach ($schema as $key => $validator) {
-            $error = static function (string $message) use ($key): void {
-                trigger_error($key . ' ' . $message, E_USER_ERROR);
-            };
-            $map[$key] = $validator($configuration[$key] ?? null, $error);
-        }
-        return $map;
+        return map($schema, static function (callable $validator, string $property) use ($configuration): mixed {
+            return $validator($configuration[$property] ?? null, partial_left([__CLASS__, 'error'], $property));
+        });
+    }
+
+    public static function error(string $property, string $message): void
+    {
+        trigger_error($property . ' ' . $message, E_USER_ERROR);
     }
 
     public static function default(mixed $defaultValue, mixed $value, callable $error): mixed
