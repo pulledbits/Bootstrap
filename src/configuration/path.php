@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace rikmeijer\Bootstrap\Configuration;
+namespace rikmeijer\Bootstrap\configuration;
 
 return static function (): string {
     $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');

@@ -9,7 +9,7 @@ use ReflectionFunction;
 use rikmeijer\Bootstrap\PHP;
 use function fread;
 use function fwrite;
-use function rikmeijer\Bootstrap\Configuration\validate;
+use function rikmeijer\Bootstrap\configuration\validate;
 use function rikmeijer\Bootstrap\configure;
 use function rikmeijer\Bootstrap\generate;
 

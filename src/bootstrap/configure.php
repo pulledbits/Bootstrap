@@ -5,12 +5,12 @@ namespace rikmeijer\Bootstrap;
 use Functional as F;
 use function Functional\map;
 use function Functional\partial_left;
-use function rikmeijer\Bootstrap\Configuration\path;
+use function rikmeijer\Bootstrap\configuration\path;
 
 $validateSection = static function (array $schema, string $section): array {
     /** @noinspection PhpIncludeInspection */
     $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
-    return map($schema, partial_left('\rikmeijer\Bootstrap\Configuration\validate', $config[$section] ?? []));
+    return map($schema, partial_left('\rikmeijer\Bootstrap\configuration\validate', $config[$section] ?? []));
 };
 
 $schema = [

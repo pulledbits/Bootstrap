@@ -9,7 +9,7 @@ Run vendor\bin\bootstrap to generate functions (configure file in config.php).
 
 ### /config.php
 
-Configuration options: /config.php (can be gitignored and used for sensitive data), defaults can be set as arguments in
+configuration options: /config.php (can be gitignored and used for sensitive data), defaults can be set as arguments in
 the resource loader
 
 ```php

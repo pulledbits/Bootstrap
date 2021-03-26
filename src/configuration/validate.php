@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace rikmeijer\Bootstrap\Configuration;
+namespace rikmeijer\Bootstrap\configuration;
 
 use function Functional\partial_left;
 

@@ -2,7 +2,7 @@
 
 namespace rikmeijer\Bootstrap;
 
-use function rikmeijer\Bootstrap\Configuration\path;
+use function rikmeijer\Bootstrap\configuration\path;
 use function rikmeijer\Bootstrap\types\boolean;
 
 return configure(static function (array $configuration): void {

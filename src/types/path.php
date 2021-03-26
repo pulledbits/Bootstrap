@@ -14,7 +14,7 @@ return static function (?string $defaultValue = null): callable {
             return $value;
         }
         if (Path::isRelative($value)) {
-            return Path::join(\rikmeijer\Bootstrap\Configuration\path(), $value);
+            return Path::join(\rikmeijer\Bootstrap\configuration\path(), $value);
         }
         return $value;
     }, $defaultValue);
