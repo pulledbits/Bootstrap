@@ -10,7 +10,7 @@ use function rikmeijer\Bootstrap\Configuration\path;
 $validateSection = static function (array $schema, string $section): array {
     /** @noinspection PhpIncludeInspection */
     $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
-    return map($schema, partial_left([Configuration::class, 'validate'], $config[$section] ?? []));
+    return map($schema, partial_left('\rikmeijer\Bootstrap\Configuration\validate', $config[$section] ?? []));
 };
 
 $schema = [

@@ -6,10 +6,10 @@ namespace rikmeijer\Bootstrap\tests;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
-use rikmeijer\Bootstrap\Configuration;
 use rikmeijer\Bootstrap\PHP;
 use function fread;
 use function fwrite;
+use function rikmeijer\Bootstrap\Configuration\validate;
 use function rikmeijer\Bootstrap\configure;
 use function rikmeijer\Bootstrap\generate;
 
@@ -28,7 +28,7 @@ final class BootstrapTest extends TestCase
 
     private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
     {
-        return Configuration::validate([], $function($configValue), 'option');
+        return validate([], $function($configValue), 'option');
     }
 
     private function getConfigurationRoot(): string
@@ -58,7 +58,7 @@ final class BootstrapTest extends TestCase
     {
         $this->expectError();
         $this->expectErrorMessage('option is not set and has no default value');
-        Configuration::validate([], $function(), 'option');
+        validate([], $function(), 'option');
     }
 
     /**
@@ -80,14 +80,14 @@ final class BootstrapTest extends TestCase
 
     private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
     {
-        return Configuration::validate(['option' => $configValue], $function(), 'option');
+        return validate(['option' => $configValue], $function(), 'option');
     }
 
 
     private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
     {
         self::assertNotEquals($configValue, $defaultValue);
-        return Configuration::validate(['option' => $configValue], $function($defaultValue), 'option');
+        return validate(['option' => $configValue], $function($defaultValue), 'option');
     }
 
     const TYPES_NS = '\rikmeijer\Bootstrap\types';
