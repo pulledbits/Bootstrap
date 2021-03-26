@@ -58,7 +58,7 @@ class PHP
         };
     }
 
-    public static function extractGlobalFunctionFromFile(string $resourcePath, string $genericNS): string
+    public static function extractGlobalFunctionFromFile(string $resourcePath, string $genericNS, string $openFunction): string
     {
         $f = new GlobalFunction(basename($resourcePath, '.php'));
         $context = self::deductContextFromString(file_get_contents($resourcePath));
@@ -91,10 +91,15 @@ class PHP
             $f->setReturnType($context['returnType']);
         }
 
+
         $returnType = $f->getReturnType();
-        $body = '\\' . $genericNS . '\\open(' . self::export($resourcePath) . ')';
-        if ($returnType === null || $returnType !== 'void') {
-            $body = 'return ' . $body;
+        if ($namespace . '\\' . $f->getName() === 'rikmeijer\Bootstrap\resource\open') {
+            $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
+        } else {
+            $body = '\\' . $openFunction . '(' . self::export($resourcePath) . ')';
+            if ($returnType === null || $returnType !== 'void') {
+                $body = 'return ' . $body;
+            }
         }
         $f->setBody($body . '(...func_get_args());');
 

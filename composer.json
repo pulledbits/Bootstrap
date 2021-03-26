@@ -20,9 +20,7 @@
     "files": [
       "src/bootstrap.php",
       "src/configuration.php",
-      "src/resource/generate.php",
-      "src/resource/open.php",
-      "src/resource/opener.php",
+      "src/resource.php",
       "src/types.php"
     ]
   },

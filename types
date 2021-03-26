@@ -26,6 +26,7 @@ if (!defined('BOOTSTRAP_COMPOSER_INSTALL')) {
 require BOOTSTRAP_COMPOSER_INSTALL;
 
 print 'Generating configuration types...';
+generate(__DIR__ . DIRECTORY_SEPARATOR . 'src/resource', 'rikmeijer\Bootstrap\resource', false);
 generate(__DIR__ . DIRECTORY_SEPARATOR . 'src/bootstrap', 'rikmeijer\Bootstrap', false);
 generate(__DIR__ . DIRECTORY_SEPARATOR . 'src/configuration', 'rikmeijer\Bootstrap\configuration', false);
 generate(__DIR__ . DIRECTORY_SEPARATOR . 'src/types', 'rikmeijer\Bootstrap\types', false);
