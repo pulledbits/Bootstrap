@@ -2,38 +2,26 @@
 
 namespace rikmeijer\Bootstrap;
 
-use function Functional\partial_left;
 use function rikmeijer\Bootstrap\Configuration\path;
 use function trigger_error;
 
 
 class Configuration
 {
-    public static function open(): callable
-    {
-        return partial_left(static function (string $path, string $section) {
-            static $config;
-            if (isset($config) === false) {
-                if (file_exists($path) === false) {
-                    $config = [];
-                } else {
-                    /** @noinspection PhpIncludeInspection */
-                    $config = (include $path);
-                    if (!is_array($config)) {
-                        $config = [];
-                    }
-                }
-            }
-            if (array_key_exists($section, $config) === false) {
-                return [];
-            }
-            return is_array($config[$section]) ? $config[$section] : [];
-        }, path() . DIRECTORY_SEPARATOR . 'config.php');
-    }
-
     public static function validateSection(array $schema, string $section): array
     {
-        $configuration = self::open()($section);
+        /** @noinspection PhpIncludeInspection */
+        $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
+        if (is_array($config) === false) {
+            $configuration = [];
+        } elseif (array_key_exists($section, $config) === false) {
+            $configuration = [];
+        } elseif (is_array($config[$section]) === false) {
+            $configuration = [];
+        } else {
+            $configuration = $config[$section];
+        }
+
         if (count($schema) === 0) {
             return $configuration;
         }
