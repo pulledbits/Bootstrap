@@ -2,20 +2,19 @@
 
 namespace rikmeijer\Bootstrap\types;
 
-use rikmeijer\Bootstrap\Configuration;
 use function Functional\partial_left;
 use function rikmeijer\Bootstrap\configure;
 
 return configure(static function (array $configuration, array $defaultCommand = []): callable {
-    $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
-    $pathValidator = path($defaultBinary);
-    return static function (?array $configuredCommand, callable $error) use ($pathValidator, $defaultCommand, $configuration) {
+    $defaultBinary = path(count($defaultCommand) > 0 ? array_shift($defaultCommand) : null);
+    $defaultArguments = arr($defaultCommand);
+    return static function (?array $configuredCommand, callable $error) use ($defaultBinary, $defaultArguments, $configuration) {
         if (empty($configuredCommand)) {
-            $binary = $pathValidator(null, $error);
-            $configuredArguments = Configuration::default($defaultCommand, null, $error);
+            $binary = $defaultBinary(null, $error);
+            $configuredArguments = $defaultArguments(null, $error);
         } else {
-            $binary = $pathValidator(array_shift($configuredCommand), $error);
-            $configuredArguments = Configuration::default($defaultCommand, $configuredCommand, $error);
+            $binary = $defaultBinary(array_shift($configuredCommand), $error);
+            $configuredArguments = $defaultArguments($configuredCommand, $error);
         }
 
         if (file_exists($binary) === false) {
