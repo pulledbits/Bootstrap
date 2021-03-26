@@ -3,13 +3,14 @@
 namespace rikmeijer\Bootstrap\types;
 
 use rikmeijer\Bootstrap\Configuration;
+use function Functional\partial_left;
 use function rikmeijer\Bootstrap\configure;
 
 return configure(static function (array $configuration, array $defaultCommand = []): callable {
     $defaultBinary = count($defaultCommand) > 0 ? array_shift($defaultCommand) : null;
     $pathValidator = path($defaultBinary);
     return static function (?array $configuredCommand, callable $error) use ($pathValidator, $defaultCommand, $configuration) {
-        if ($configuredCommand === null || count($configuredCommand) === 0) {
+        if (empty($configuredCommand)) {
             $binary = $pathValidator(null, $error);
             $configuredArguments = Configuration::default($defaultCommand, null, $error);
         } else {
@@ -22,14 +23,14 @@ return configure(static function (array $configuration, array $defaultCommand = 
             return static function (): void {
             };
         }
-        $command = static function (string ...$arguments) use ($binary, $configuredArguments) {
+        $command = partial_left(static function (string $binary, array $configuredArguments, string ...$arguments) {
             return escapeshellcmd($binary) . ' ' . implode(' ', array_map(static function (string $arg) {
                     return match (PHP_OS_FAMILY) {
                         'Windows' => str_starts_with($arg, '/') ? $arg : escapeshellarg($arg),
                         default => str_starts_with($arg, '-') ? $arg : escapeshellarg($arg),
                     };
                 }, array_merge($configuredArguments, $arguments)));
-        };
+        }, $binary, $configuredArguments);
 
 
         return static function (string $description, string ...$arguments) use ($command, $configuration): int {
