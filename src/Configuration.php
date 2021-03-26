@@ -15,10 +15,6 @@ class Configuration
         /** @noinspection PhpIncludeInspection */
         $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
         $configuration = $config[$section] ?? [];
-
-        if (count($schema) === 0) {
-            return $configuration;
-        }
         return map($schema, static function (callable $validator, string $property) use ($configuration): mixed {
             return $validator($configuration[$property] ?? null, partial_left([__CLASS__, 'error'], $property));
         });
