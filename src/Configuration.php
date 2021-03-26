@@ -14,10 +14,12 @@ class Configuration
     {
         /** @noinspection PhpIncludeInspection */
         $config = (include path() . DIRECTORY_SEPARATOR . 'config.php');
-        $configuration = $config[$section] ?? [];
-        return map($schema, static function (callable $validator, string $property) use ($configuration): mixed {
-            return $validator($configuration[$property] ?? null, partial_left([__CLASS__, 'error'], $property));
-        });
+        return map($schema, partial_left([__CLASS__, 'validate'], $config[$section] ?? []));
+    }
+
+    public static function validate(array $configuration, callable $validator, string $property): mixed
+    {
+        return $validator($configuration[$property] ?? null, partial_left([__CLASS__, 'error'], $property));
     }
 
     public static function error(string $property, string $message): void
