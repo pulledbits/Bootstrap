@@ -38,9 +38,10 @@ Resource loader for logger
 
 use Monolog\Handler\SyslogHandler;
 use Psr\Log\LoggerInterface;
+use function rikmeijer\Bootstrap\configure;
 
 
-return \rikmeijer\Bootstrap\myProject\logger\configure(static function(array $configuration, string $level, string $message) : LoggerInterface {
+return configure(static function(array $configuration, string $level, string $message) : LoggerInterface {
     $logger = new Monolog\Logger($configuration['channel']);
     $logger->pushHandler(new SyslogHandler("debug"));
     switch ($level) {
@@ -50,14 +51,14 @@ return \rikmeijer\Bootstrap\myProject\logger\configure(static function(array $co
     }
     return $logger;
 }, [
-    "channel" => \rikmeijer\Bootstrap\myProject\string("MyApp"), // helper functions reside in project namespace (BOOTSTRAP/namespace or \rikmeijer\Bootstrap\<BASENAME_CONFIG_DIR>)
-    "no-default-option" => \rikmeijer\Bootstrap\myProject\configuration\string(null), // this will cause an error when not in config.php and thus enforcing a value (making it required)
+    "channel" => \rikmeijer\Bootstrap\types\string("MyApp"), // helper functions reside in project namespace (BOOTSTRAP/namespace or \rikmeijer\Bootstrap\<BASENAME_CONFIG_DIR>)
+    "no-default-option" => \rikmeijer\Bootstrap\types\string(null), // this will cause an error when not in config.php and thus enforcing a value (making it required)
     
-    "simulation" => \rikmeijer\Bootstrap\myProject\configuration\boolean(true),
-    "age" => \rikmeijer\Bootstrap\myProject\configuration\integer(1),
-    "pi" => \rikmeijer\Bootstrap\myProject\configuration\float(3.14),
-    "random-text" => \rikmeijer\Bootstrap\myProject\configuration\string("text"),
-    "list-of-items" => \rikmeijer\Bootstrap\myProject\configuration\arr(["some", "value"])
+    "simulation" => \rikmeijer\Bootstrap\types\boolean(true),
+    "age" => \rikmeijer\Bootstrap\types\integer(1),
+    "pi" => \rikmeijer\Bootstrap\types\float(3.14),
+    "random-text" => \rikmeijer\Bootstrap\types\string("text"),
+    "list-of-items" => \rikmeijer\Bootstrap\types\arr(["some", "value"])
 ]);
 ```
 
@@ -87,7 +88,12 @@ return static function() : LoggerInterface {
 
 // include composer autoloader
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';
+require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'bootstrap.php';   // or you can include this in composer.json:
+                                                                    // "autoload" : {
+                                                                    //      "files" : [
+                                                                    //          "bootstrap.php"
+                                                                    //      ]
+                                                                    //  }
 rikmeijer\Bootstrap\myProject\logger('emergency', "Houston, we have a problem.");
 my\custom\namespace\loggerDependant();
 ```
