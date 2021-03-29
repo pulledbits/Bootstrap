@@ -330,6 +330,26 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $f()->status);
     }
 
+
+    public function test_WhenEnvVarBOOTSTRAP_CONFIGURATION_PATHMissing_Expect_UsingCurrentWorkingDirectory(): void
+    {
+        putenv('BOOTSTRAP_CONFIGURATION_PATH'); // remove env var
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        chdir(sys_get_temp_dir());
+        self::assertFileDoesNotExist(getcwd() . DIRECTORY_SEPARATOR . 'config.php');
+        $this->expectError();
+        $this->expectErrorMessage("Configuration path invalid: no config.php found");
+        generate();
+
+
+        chdir($this->getConfigurationRoot());
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f()->status);
+    }
+
     public function test_When_FunctionsNotGenerated_Expect_FunctionsNotExisting(): void
     {
         $f = $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . 'return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
