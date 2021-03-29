@@ -2,12 +2,6 @@
 
 namespace rikmeijer\Bootstrap\resource;
 
-//if (function_exists('rikmeijer\\Bootstrap\\resource\\' . basename(__FILE__, '.php')) === false) {
-//    function generate() {
-//        return (include __FILE__)(...func_get_args());
-//    }
-//}
-
 use rikmeijer\Bootstrap\PHP;
 use function Functional\partial_left;
 
