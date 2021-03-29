@@ -42,6 +42,9 @@ return configure(static function (array $configuration, array $defaultCommand = 
                 fwrite($out, '(s) ' . $command(...$arguments));
                 return 0;
             }
+            if ($configuration['verbose']) {
+                fwrite($out, '(v) ' . $command(...$arguments) . PHP_EOL);
+            }
 
             $stderr = tmpfile();
             $descriptors = [
@@ -71,6 +74,7 @@ return configure(static function (array $configuration, array $defaultCommand = 
     };
 }, [
     'simulation' => boolean(false),
+    'verbose'    => boolean(false),
     'in'         => file('php://input'),
     'out'        => file('php://output'),
     'error'      => file('php://temp'),

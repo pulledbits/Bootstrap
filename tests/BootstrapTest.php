@@ -240,6 +240,34 @@ final class BootstrapTest extends TestCase
         self::assertEquals(0, $actual("Testing test test...", cmd: "echo test4"));
     }
 
+    public function testWhen_BinaryVerbose_Expect_ExecutedCommandPrintedBeforeOutput(): void
+    {
+        $command = match (PHP_OS_FAMILY) {
+            'Windows' => [
+                'c:\\windows\\system32\\cmd.exe',
+                '/C',
+                "echo test"
+            ],
+            default => [
+                '/usr/bin/bash',
+                '-c',
+                "echo test"
+            ],
+        };
+
+        $this->functions->createConfig('config', [
+            'types/binary' => ['verbose' => true]
+        ]);
+        $actual = $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(self::TYPES_NS . '\binary', $command, [
+            "/usr/bin/bash",
+            "-c",
+            "echo test2"
+        ]);
+
+        $this->expectOutputString("What is this?..." . PHP_EOL . '(v) ' . escapeshellcmd($command[0]) . ' ' . $command[1] . ' ' . escapeshellarg($command[2]) . PHP_EOL . "test" . PHP_EOL);
+        self::assertEquals(0, $actual("What is this?..."));
+    }
+
     public function testWhen_BinarySimulation_Expect_BinaryNotReallyBeExecuted(): void
     {
         $command = match (PHP_OS_FAMILY) {
