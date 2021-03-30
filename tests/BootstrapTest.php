@@ -15,6 +15,7 @@ use function rikmeijer\Bootstrap\generate;
 
 final class BootstrapTest extends TestCase
 {
+    const TYPES_NS = '\rikmeijer\Bootstrap\types';
     private Functions $functions;
 
     /**
@@ -29,21 +30,6 @@ final class BootstrapTest extends TestCase
     private function test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(string $function, mixed $configValue): mixed
     {
         return validate([], $function($configValue), 'option');
-    }
-
-    private function getConfigurationRoot(): string
-    {
-        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getTestName();
-    }
-
-    private function getTestName(): string
-    {
-        return $this->getName(false);
-    }
-
-    private function activateBootstrap(): void
-    {
-        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
     }
 
     /**
@@ -69,6 +55,10 @@ final class BootstrapTest extends TestCase
         self::assertEquals($configValue, $this->testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied($function, $configValue));
     }
 
+    private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
+    {
+        return validate(['option' => $configValue], $function(), 'option');
+    }
 
     /**
      * @dataProvider optionsProvider
@@ -78,19 +68,11 @@ final class BootstrapTest extends TestCase
         self::assertEquals($configValue, $this->testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue($function, $configValue, $defaultValue));
     }
 
-    private function testConfig_WhenOptionRequired_Expect_NoErrorWhenSupplied(string $function, mixed $configValue): mixed
-    {
-        return validate(['option' => $configValue], $function(), 'option');
-    }
-
-
     private function testConfig_WhenOptionOptional_Expect_ConfiguredValuePreferredOverDefaultValue(string $function, mixed $configValue, mixed $defaultValue): mixed
     {
         self::assertNotEquals($configValue, $defaultValue);
         return validate(['option' => $configValue], $function($defaultValue), 'option');
     }
-
-    const TYPES_NS = '\rikmeijer\Bootstrap\types';
 
     public function optionsProvider(): array
     {
@@ -134,6 +116,25 @@ final class BootstrapTest extends TestCase
         $path = $this->mkdir('somedir');
         $actual = $this->test_WhenOptionWithDefaultValue_ExpectDefaultValueToBeAvailableInConfiguration(self::TYPES_NS . '\path', 'somedir');
         self::assertEquals(fileinode($path), fileinode($actual));
+    }
+
+    private function mkdir(string $path): string
+    {
+        $path = $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . $path;
+        if (!is_dir($path) && !mkdir($path, recursive: true)) {
+            trigger_error("Unable to create " . $path, E_USER_ERROR);
+        }
+        return $path;
+    }
+
+    private function getConfigurationRoot(): string
+    {
+        return sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->getTestName();
+    }
+
+    private function getTestName(): string
+    {
+        return $this->getName(false) . $this->dataName();
     }
 
     public function test_When_PathOptionWithRelativeDefaultValueWithSubdirectories_Expect_JoinedAbsoluteDefaultValueToBeAvailableInConfiguration(): void
@@ -301,9 +302,35 @@ final class BootstrapTest extends TestCase
         $this->test_When_OptionRequired_Expect_ErrorWhenNotSupplied(self::TYPES_NS . '\binary');
     }
 
-    private function getBootstrapFQFN(string $function): string
+    public function test_When_CustomOptionsAreConfigured_Expect_IgnoredIfNotInSchema(): void
     {
-        return 'rikmeijer\\Bootstrap\\' . $function;
+        $this->functions->createConfig('config', ['resource' => ['option2' => "custom"]]);
+        generate();
+        $this->activateBootstrap();
+
+        $function = configure(static function (array $configuration): array {
+            return $configuration;
+        }, ["option" => (self::TYPES_NS . '\string')("default")], 'resource');
+
+        $configuration = $function();
+
+        self::assertEquals("default", $configuration['option']);
+        self::assertArrayNotHasKey('option2', $configuration);
+    }
+
+    private function activateBootstrap(): void
+    {
+        include $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php';
+    }
+
+    public function testResource(): void
+    {
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f()->status);
     }
 
     private function createFunction(string $resourceName, string $content, string $configNS = null): string
@@ -332,32 +359,10 @@ final class BootstrapTest extends TestCase
         return $fqfn;
     }
 
-    public function test_When_CustomOptionsAreConfigured_Expect_IgnoredIfNotInSchema(): void
+    private function getBootstrapFQFN(string $function): string
     {
-        $this->functions->createConfig('config', ['resource' => ['option2' => "custom"]]);
-        generate();
-        $this->activateBootstrap();
-
-        $function = configure(static function (array $configuration): array {
-            return $configuration;
-        }, ["option" => (self::TYPES_NS . '\string')("default")], 'resource');
-
-        $configuration = $function();
-
-        self::assertEquals("default", $configuration['option']);
-        self::assertArrayNotHasKey('option2', $configuration);
+        return 'rikmeijer\\Bootstrap\\' . $function;
     }
-
-    public function testResource(): void
-    {
-        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-
-        generate();
-        $this->activateBootstrap();
-
-        self::assertEquals('Yes!', $f()->status);
-    }
-
 
     public function test_WhenEnvVarBOOTSTRAP_CONFIGURATION_PATHMissing_Expect_UsingCurrentWorkingDirectory(): void
     {
@@ -402,6 +407,79 @@ final class BootstrapTest extends TestCase
         ];
 
         self::assertNull($f(...$args));
+    }
+
+    /**
+     * @dataProvider typeHintProvider
+     */
+    public function test_When_FunctionGenerated_Expected_TypeHintingCopiedToWrapperFunction(string $typeHint, mixed ...$arguments): void
+    {
+        $namespace = '';
+        if (substr_count($typeHint, "\\") > 1) {
+            $backslashPos = strrpos($typeHint, "\\");
+            $namespace = 'namespace some\\name\\space' . (str_starts_with($typeHint, '?') ? '\\nullable' : '') . ';' . PHP_EOL . 'use ' . $typeHint . ';';
+            $typeHint = substr($typeHint, $backslashPos + 1);
+        }
+        $f = $this->createFunction('test/resourceFunc', '<?php ' . $namespace . ' return static function(' . $typeHint . '$arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        foreach ($arguments as $argument) {
+            self::assertEquals('Yes!', $f($argument));
+        }
+    }
+
+    public function typeHintProvider(): array
+    {
+        $typeHints = [
+            "none"           => [
+                '',
+                'foo'
+            ],
+            'class'          => [
+                '\ReflectionFunction',
+                $this->createMock(ReflectionFunction::class)
+            ],
+            'class_nullable' => [
+                '?\ReflectionFunction',
+                null,
+                $this->createMock(ReflectionFunction::class)
+            ],
+            'class_in_ns'    => [
+                Test::class,
+                $this->createMock(Test::class)
+            ]
+        ];
+        $primitives = [
+            "bool"   => true,
+            "int"    => 3,
+            "float"  => 4.14,
+            "string" => 'foo',
+            "array"  => [1, 2, 3]
+        ];
+        foreach ($primitives as $primitive => $argument) {
+            $typeHints[$primitive] = [
+                $primitive,
+                $argument
+            ];
+            $typeHints[$primitive . '_nullable'] = [
+                '?' . $primitive,
+                null,
+                $argument
+            ];
+            foreach ($primitives as $primitiveCombinated => $argumentCombinated) {
+                if ($primitive === $primitiveCombinated) {
+                    continue;
+                }
+                $typeHints[$primitive . '_' . $primitiveCombinated] = [
+                    $primitive . '|' . $primitiveCombinated,
+                    $argument,
+                    $argumentCombinated
+                ];
+            }
+        }
+        return $typeHints;
     }
 
     public function testWhen_Called_Expect_FunctionAvailableAsFunctionUnderNS(): void
@@ -503,15 +581,6 @@ final class BootstrapTest extends TestCase
         $this->activateBootstrap();
 
         self::assertEquals($value, $f()->status);
-    }
-
-    private function mkdir(string $path): string
-    {
-        $path = $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . $path;
-        if (!is_dir($path) && !mkdir($path, recursive: true)) {
-            trigger_error("Unable to create " . $path, E_USER_ERROR);
-        }
-        return $path;
     }
 
     public function testWhenResourceDependentOfOtherResource_Expect_ResourcesVariableCallableAndReturningDependency(): void

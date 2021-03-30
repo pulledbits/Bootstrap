@@ -124,8 +124,21 @@ class PHP
             $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
         }
 
-        if ($findNextToken(T_RETURN) === null) {
+        $uptoReturn = $collectTokensUpTo(T_RETURN);
+        if ($uptoReturn === null) {
             return $context;
+        }
+
+        $useCollector = F\partial_left([__CLASS__, 'tokenCollector'], $uptoReturn);
+        $uses = [];
+        while ($useCollector(T_USE) !== null) {
+            $useIdentifier = (F\partial_left([__CLASS__, 'tokenFinder'], $uptoReturn, T_NAME_QUALIFIED)())[1];
+            //if ($useCollector(T_AS) !== null) {
+            //    $asIdentifier = (F\partial_left([__CLASS__, 'tokenFinder'], $uptoReturn, T_NAME_QUALIFIED)())[1];
+            //} else {
+            $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
+            //}
+            $uses[$asIdentifier] = $useIdentifier;
         }
 
         if ($findNextToken(T_FUNCTION, 10) !== null) {
@@ -157,7 +170,12 @@ class PHP
                             if ($bufferedToken === '|') {
                                 continue;
                             }
-                            $types[] = $bufferedToken[1];
+
+                            if (array_key_exists($bufferedToken[1], $uses)) {
+                                $types[] = '\\' . $uses[$bufferedToken[1]];
+                            } else {
+                                $types[] = $bufferedToken[1];
+                            }
                         }
                         if (count($types) > 0) {
                             $parameter['type'] = implode('|', $types);
