@@ -416,9 +416,17 @@ final class BootstrapTest extends TestCase
     {
         $namespace = '';
         if (substr_count($typeHint, "\\") > 1) {
+            $namespace = 'namespace some\\name\\space';
             $backslashPos = strrpos($typeHint, "\\");
-            $namespace = 'namespace some\\name\\space' . (str_starts_with($typeHint, '?') ? '\\nullable' : '') . ';' . PHP_EOL . 'use ' . $typeHint . ';';
+            $uses = $typeHint;
             $typeHint = substr($typeHint, $backslashPos + 1);
+            if (str_starts_with($uses, '?')) {
+                $namespace .= '\\nullable';
+                $uses = substr($uses, 1);
+                $typeHint = '?' . $typeHint;
+            }
+            $namespace .= ';' . PHP_EOL . 'use ' . $uses . ';';
+
         }
         $f = $this->createFunction('test/resourceFunc', '<?php ' . $namespace . ' return static function(' . $typeHint . '$arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
 
@@ -433,21 +441,26 @@ final class BootstrapTest extends TestCase
     public function typeHintProvider(): array
     {
         $typeHints = [
-            "none"           => [
+            "none"                 => [
                 '',
                 'foo'
             ],
-            'class'          => [
+            'class'                => [
                 '\ReflectionFunction',
                 $this->createMock(ReflectionFunction::class)
             ],
-            'class_nullable' => [
+            'class_nullable'       => [
                 '?\ReflectionFunction',
                 null,
                 $this->createMock(ReflectionFunction::class)
             ],
-            'class_in_ns'    => [
+            'class_in_ns'          => [
                 Test::class,
+                $this->createMock(Test::class)
+            ],
+            'class_in_ns_nullable' => [
+                '?' . Test::class,
+                null,
                 $this->createMock(Test::class)
             ]
         ];
