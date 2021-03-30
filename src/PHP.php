@@ -113,33 +113,31 @@ class PHP
 
     public static function deductContextFromString(string $code): array
     {
-        $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
+        $collector = self::collect(self::tokenize(token_get_all($code, TOKEN_PARSE)));
 
-        $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
+        $tokensUptoReturn = $collector(T_RETURN);
+        if ($tokensUptoReturn === null) {
+            return [];
+        }
 
         $context = [];
 
-        $uptoReturn = $collectTokensUpTo(T_RETURN);
-        if ($uptoReturn === null) {
-            return $context;
-        }
-
-        $useCollector = F\partial_left([__CLASS__, 'tokenCollector'], $uptoReturn);
-        if ($useCollector(T_NAMESPACE) !== null) {
-            $context['namespace'] = ($useCollector(T_NAME_QUALIFIED)(2))[1];
+        $tokensUpToReturnCollector = self::collect($tokensUptoReturn);
+        if ($tokensUpToReturnCollector(T_NAMESPACE) !== null) {
+            $context['namespace'] = ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
         }
 
         $uses = [];
-        while ($useCollector(T_USE) !== null) {
-            $useIdentifier = ($useCollector(T_NAME_QUALIFIED)(2))[1];
+        while ($tokensUpToReturnCollector(T_USE) !== null) {
+            $useIdentifier = ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
             $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
             $uses[$asIdentifier] = $useIdentifier;
         }
 
-        if ($collectTokensUpTo(T_FUNCTION) !== null) {
-            $collectTokensUpTo("(");
-            $parametersTokens = F\partial_left([__CLASS__, 'tokenCollector'], $collectTokensUpTo(")"));
-            $parametersTokens(-1);
+        if ($collector(T_FUNCTION) !== null) {
+            $parametersTokens = self::collect($collector(")"));
+            $parametersTokens(1); // shift (
+            $parametersTokens(-1); // pop )
 
             $context['parameters'] = [];
             while ($parameterTokens = $parametersTokens(",", ")")) {
@@ -192,9 +190,9 @@ class PHP
             }
 
 
-            $functionSignatureTokens = $collectTokensUpTo('{');
+            $functionSignatureTokens = $collector('{');
             $functionSignatureTokens(-1);
-            $functionSignatureTokenFinder = F\partial_left([__CLASS__, 'tokenCollector'], $functionSignatureTokens);
+            $functionSignatureTokenFinder = self::collect($functionSignatureTokens);
             if (($functionParameterTokens = $functionSignatureTokenFinder(":", null)) !== null) {
                 $functionParameterTokens(-1);
 
@@ -206,6 +204,11 @@ class PHP
             }
         }
         return $context;
+    }
+
+    private static function collect(callable $tokens): callable
+    {
+        return F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
     }
 
     public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
