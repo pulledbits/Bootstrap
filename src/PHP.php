@@ -113,7 +113,7 @@ class PHP
 
     public static function deductContextFromString(string $code): array
     {
-        $collector = self::collect(self::tokenize(token_get_all($code, TOKEN_PARSE)));
+        $collector = self::makeCollectorFromTokens(self::tokenize(token_get_all($code, TOKEN_PARSE)));
 
         $tokensUptoReturn = $collector(T_RETURN);
         if ($tokensUptoReturn === null) {
@@ -122,7 +122,7 @@ class PHP
 
         $context = [];
 
-        $tokensUpToReturnCollector = self::collect($tokensUptoReturn);
+        $tokensUpToReturnCollector = self::makeCollectorFromTokens($tokensUptoReturn);
         if ($tokensUpToReturnCollector(T_NAMESPACE) !== null) {
             $context['namespace'] = ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
         }
@@ -135,15 +135,16 @@ class PHP
         }
 
         if ($collector(T_FUNCTION) !== null) {
-            $parametersTokens = self::collect($collector(")"));
+            $parametersTokens = $collector(")");
             $parametersTokens(1); // shift (
             $parametersTokens(-1); // pop )
+            $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
 
             $context['parameters'] = [];
-            while ($parameterTokens = $parametersTokens(",", ")")) {
+            while ($parameterTokens = $parametersTokensCollector(",", null)) {
                 $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
                 $bufferedTokens = [];
-                while ($parameterToken = $parameterTokens()) {
+                while ($parameterToken = $parameterTokens(1)) {
                     if ($parameterToken === '?') {
                         $parameter['nullable'] = true;
                         continue;
@@ -179,7 +180,7 @@ class PHP
                     $bufferedTokens[] = $parameterToken;
                 }
 
-                while ($parameterToken = $parameterTokens()) {
+                while ($parameterToken = $parameterTokens(1)) {
                     if (is_array($parameterToken)) {
                         $code = 'return ' . $parameterToken[1] . ';';
                         $parameter['default'] = eval($code);
@@ -189,12 +190,9 @@ class PHP
                 $context['parameters'][] = $parameter;
             }
 
-
-            $functionSignatureTokens = $collector('{');
-            $functionSignatureTokens(-1);
-            $functionSignatureTokenFinder = self::collect($functionSignatureTokens);
-            if (($functionParameterTokens = $functionSignatureTokenFinder(":", null)) !== null) {
-                $functionParameterTokens(-1);
+            $functionParameterTokens = self::makeCollectorFromTokens($collector('{'))(":", null);
+            if ($functionParameterTokens !== null) {
+                $functionParameterTokens(-1); // pop :
 
                 $context['returnType'] = '';
                 while ($functionSignatureToken = $functionParameterTokens(1)) {
@@ -206,7 +204,7 @@ class PHP
         return $context;
     }
 
-    private static function collect(callable $tokens): callable
+    private static function makeCollectorFromTokens(callable $tokens): callable
     {
         return F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
     }

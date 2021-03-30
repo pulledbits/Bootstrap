@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace rikmeijer\Bootstrap\tests;
 
+use ArgumentCountError;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
@@ -421,7 +422,7 @@ final class BootstrapTest extends TestCase
             $namespace .= ';' . PHP_EOL . 'use ' . $uses . ';';
 
         }
-        $f = $this->createFunction('test/resourceFunc', '<?php ' . $namespace . ' return static function(' . $typeHint . '$arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+        $f = $this->createFunction('resourceFunc', '<?php ' . $namespace . ' return static function(' . $typeHint . ' $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
@@ -429,6 +430,45 @@ final class BootstrapTest extends TestCase
         foreach ($arguments as $argument) {
             self::assertEquals('Yes!', $f($argument));
         }
+    }
+
+    public function test_When_FunctionGeneratedWithMultipleArguments_Expected_TypeHintingCopiedToWrapperFunction(): void
+    {
+        $namespace = '';
+        $parameters = [];
+        $arguments = [];
+        foreach ($this->typeHintProvider() as $typeHintId => $typeHintArguments) {
+            $typeHint = array_shift($typeHintArguments);
+
+            if (substr_count($typeHint, "\\") > 1) {
+                $namespace = 'namespace other\\name\\space';
+                $backslashPos = strrpos($typeHint, "\\");
+                $uses = $typeHint;
+                $typeHint = substr($typeHint, $backslashPos + 1);
+                if (str_starts_with($uses, '?')) {
+                    $namespace .= '\\nullable';
+                    $uses = substr($uses, 1);
+                    $typeHint = '?' . $typeHint;
+                }
+                $namespace .= ';' . PHP_EOL . 'use ' . $uses . ';';
+            }
+
+            $parameters[] = $typeHint . ' $arg_' . $typeHintId;
+            $arguments[] = $typeHintArguments[0];
+        }
+
+
+        $f = $this->createFunction('resourceFunc', '<?php ' . $namespace . ' return static function(' . implode(',', $parameters) . ') {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        $this->expectException(ArgumentCountError::class);
+        $this->expectExceptionMessageMatches('#' . preg_quote(substr($f, 1), '#') . '#');
+        $f();
+
+        self::assertEquals('Yes!', $f(...$arguments));
+
     }
 
     public function typeHintProvider(): array
