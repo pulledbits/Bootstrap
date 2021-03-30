@@ -129,7 +129,11 @@ class PHP
 
         $uses = [];
         while ($tokensUpToReturnCollector(T_USE) !== null) {
-            $useIdentifier = ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
+            $useTokens = $tokensUpToReturnCollector(T_NAME_QUALIFIED);
+            if ($useTokens === null) {
+                continue;
+            }
+            $useIdentifier = ($useTokens(-1))[1];
             $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
             $uses[$asIdentifier] = $useIdentifier;
         }
