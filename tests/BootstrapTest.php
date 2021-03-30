@@ -341,7 +341,7 @@ final class BootstrapTest extends TestCase
         }
         $file = $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php';
 
-        $context = PHP::deductContextFromString(substr($content, 0, strpos($content, 'return')));
+        $context = PHP::deductContextFromString(substr($content, 0, strpos($content, 'return') + 6) . ';');
         $fqfn = '\\';
         $functionIdentifier = str_replace('/', '\\', $resourceName);
         if ($configNS !== null) {
@@ -399,14 +399,7 @@ final class BootstrapTest extends TestCase
         generate();
         $this->activateBootstrap();
 
-        $args = [
-            'foo',
-            null,
-            $this->createMock(ReflectionFunction::class),
-            3.14
-        ];
-
-        self::assertNull($f(...$args));
+        self::assertNull($f());
     }
 
     /**

@@ -53,8 +53,13 @@ class PHP
 
     private static function tokenize(array $tokens): callable
     {
-        return static function () use (&$tokens): mixed {
-            return array_shift($tokens);
+        return static function (int $offset) use (&$tokens): mixed {
+            $function = '\array_' . ($offset > 0 ? 'shift' : 'pop');
+            $value = null;
+            for ($i = 0; $i < abs($offset); $i++) {
+                $value = $function($tokens);
+            }
+            return $value;
         };
     }
 
@@ -110,19 +115,9 @@ class PHP
     {
         $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
 
-        $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
         $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
 
         $context = [];
-        if ($findNextToken(T_NAMESPACE) !== null) {
-            $context['namespace'] = $findNextToken(T_NAME_QUALIFIED)[1];
-        } else {
-            // no namespace reinit tokens
-            $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
-
-            $findNextToken = F\partial_left([__CLASS__, 'tokenFinder'], $tokens);
-            $collectTokensUpTo = F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
-        }
 
         $uptoReturn = $collectTokensUpTo(T_RETURN);
         if ($uptoReturn === null) {
@@ -130,23 +125,24 @@ class PHP
         }
 
         $useCollector = F\partial_left([__CLASS__, 'tokenCollector'], $uptoReturn);
+        if ($useCollector(T_NAMESPACE) !== null) {
+            $context['namespace'] = ($useCollector(T_NAME_QUALIFIED)(2))[1];
+        }
+
         $uses = [];
         while ($useCollector(T_USE) !== null) {
-            $useIdentifier = (F\partial_left([__CLASS__, 'tokenFinder'], $uptoReturn, T_NAME_QUALIFIED)())[1];
-            //if ($useCollector(T_AS) !== null) {
-            //    $asIdentifier = (F\partial_left([__CLASS__, 'tokenFinder'], $uptoReturn, T_NAME_QUALIFIED)())[1];
-            //} else {
+            $useIdentifier = ($useCollector(T_NAME_QUALIFIED)(2))[1];
             $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
-            //}
             $uses[$asIdentifier] = $useIdentifier;
         }
 
-        if ($findNextToken(T_FUNCTION, 10) !== null) {
-            $findNextToken("(");
+        if ($collectTokensUpTo(T_FUNCTION) !== null) {
+            $collectTokensUpTo("(");
             $parametersTokens = F\partial_left([__CLASS__, 'tokenCollector'], $collectTokensUpTo(")"));
+            $parametersTokens(-1);
 
             $context['parameters'] = [];
-            while ($parameterTokens = $parametersTokens(",", null)) {
+            while ($parameterTokens = $parametersTokens(",", ")")) {
                 $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
                 $bufferedTokens = [];
                 while ($parameterToken = $parameterTokens()) {
@@ -197,10 +193,13 @@ class PHP
 
 
             $functionSignatureTokens = $collectTokensUpTo('{');
-            $functionSignatureTokenFinder = F\partial_left([__CLASS__, 'tokenFinder'], $functionSignatureTokens);
-            if ($functionSignatureTokenFinder(":") !== null) {
+            $functionSignatureTokens(-1);
+            $functionSignatureTokenFinder = F\partial_left([__CLASS__, 'tokenCollector'], $functionSignatureTokens);
+            if (($functionParameterTokens = $functionSignatureTokenFinder(":", null)) !== null) {
+                $functionParameterTokens(-1);
+
                 $context['returnType'] = '';
-                while ($functionSignatureToken = $functionSignatureTokens()) {
+                while ($functionSignatureToken = $functionParameterTokens(1)) {
                     $context['returnType'] .= $functionSignatureToken[1];
                 }
                 $context['returnType'] = trim($context['returnType']);
@@ -209,31 +208,11 @@ class PHP
         return $context;
     }
 
-    public static function tokenFinder(callable $tokens, mixed $id, ?int $maxTokenDistance = null): null|array|string
-    {
-        while ($token = $tokens()) {
-            if ($maxTokenDistance > 0) {
-                $maxTokenDistance--;
-            } elseif ($maxTokenDistance === 0) {
-                return null;
-            }
-            if (is_string($id)) {
-                if ($token === $id) {
-                    return $token;
-                }
-            } elseif (is_int($id)) {
-                if ($token[0] === $id) {
-                    return $token;
-                }
-            }
-        }
-        return null;
-    }
-
     public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
     {
         $buffer = [];
-        while ($token = $tokens()) {
+        while ($token = $tokens(1)) {
+            $buffer[] = $token;
             foreach ($ids as $id) {
                 if (is_string($id)) {
                     if ($token === $id) {
@@ -245,7 +224,6 @@ class PHP
                     }
                 }
             }
-            $buffer[] = $token;
         }
         if (count($buffer) === 0) {
             return null;
