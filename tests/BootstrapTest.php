@@ -408,21 +408,7 @@ final class BootstrapTest extends TestCase
      */
     public function test_When_FunctionGenerated_Expected_TypeHintingCopiedToWrapperFunction(string $typeHint, mixed ...$arguments): void
     {
-        $namespace = '';
-        if (substr_count($typeHint, "\\") > 1) {
-            $namespace = 'namespace some\\name\\space';
-            $backslashPos = strrpos($typeHint, "\\");
-            $uses = $typeHint;
-            $typeHint = substr($typeHint, $backslashPos + 1);
-            if (str_starts_with($uses, '?')) {
-                $namespace .= '\\nullable';
-                $uses = substr($uses, 1);
-                $typeHint = '?' . $typeHint;
-            }
-            $namespace .= ';' . PHP_EOL . 'use ' . $uses . ';';
-
-        }
-        $f = $this->createFunction('resourceFunc', '<?php ' . $namespace . ' return static function(' . $typeHint . ' $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+        $f = $this->createFunction('resourceFunc', '<?php return static function(' . $typeHint . ' $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
@@ -432,6 +418,37 @@ final class BootstrapTest extends TestCase
         }
     }
 
+    public function test_When_FunctionGenerated_Expected_TypeHintingWithUseCopiedToWrapperFunction(): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php namespace some\\name\\space1; use ' . Test::class . '; return static function(Test $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+    }
+
+    public function test_When_FunctionGenerated_Expected_TypeHintingWithNullableUseCopiedToWrapperFunction(): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php namespace some\\name\\space2; use ' . Test::class . '; return static function(?Test $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f(null));
+        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+    }
+
+    public function test_When_FunctionGenerated_Expected_TypeHintingWithUseAndUseFunctionCopiedToWrapperFunction(): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php namespace some\\name\\space3; use ' . Test::class . '; use function \fopen; return static function(Test $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+    }
+
     public function test_When_FunctionGeneratedWithMultipleArguments_Expected_TypeHintingCopiedToWrapperFunction(): void
     {
         $namespace = '';
@@ -439,20 +456,6 @@ final class BootstrapTest extends TestCase
         $arguments = [];
         foreach ($this->typeHintProvider() as $typeHintId => $typeHintArguments) {
             $typeHint = array_shift($typeHintArguments);
-
-            if (substr_count($typeHint, "\\") > 1) {
-                $namespace = 'namespace other\\name\\space';
-                $backslashPos = strrpos($typeHint, "\\");
-                $uses = $typeHint;
-                $typeHint = substr($typeHint, $backslashPos + 1);
-                if (str_starts_with($uses, '?')) {
-                    $namespace .= '\\nullable';
-                    $uses = substr($uses, 1);
-                    $typeHint = '?' . $typeHint;
-                }
-                $namespace .= ';' . PHP_EOL . 'use ' . $uses . ';';
-            }
-
             $parameters[] = $typeHint . ' $arg_' . $typeHintId;
             $arguments[] = $typeHintArguments[0];
         }
@@ -468,7 +471,6 @@ final class BootstrapTest extends TestCase
         $f();
 
         self::assertEquals('Yes!', $f(...$arguments));
-
     }
 
     public function typeHintProvider(): array
@@ -486,15 +488,6 @@ final class BootstrapTest extends TestCase
                 '?\ReflectionFunction',
                 null,
                 $this->createMock(ReflectionFunction::class)
-            ],
-            'class_in_ns'          => [
-                Test::class,
-                $this->createMock(Test::class)
-            ],
-            'class_in_ns_nullable' => [
-                '?' . Test::class,
-                null,
-                $this->createMock(Test::class)
             ]
         ];
         $primitives = [
