@@ -385,7 +385,7 @@ final class BootstrapTest extends TestCase
 
     public function test_When_FunctionsNotGenerated_Expect_FunctionsNotExisting(): void
     {
-        $f = $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . 'return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $f = $this->createFunction('resourceFunc', '<?php ' . PHP_EOL . 'return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         $this->expectError();
         $this->activateBootstrap();
@@ -394,7 +394,7 @@ final class BootstrapTest extends TestCase
 
     public function testWhen_VoidCalled_Expect_FunctionNotReturning(): void
     {
-        $f = $this->createFunction('resourceFuncVoid', '<?php namespace rikmeijer\\Bootstrap\\fvoid; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) : void {' . PHP_EOL . ' ' . PHP_EOL . '};');
+        $f = $this->createFunction('resourceFuncVoid', '<?php namespace rikmeijer\\Bootstrap\\fvoid; return static function() : void {' . PHP_EOL . ' ' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
@@ -498,30 +498,22 @@ final class BootstrapTest extends TestCase
     public function testWhen_Called_Expect_FunctionAvailableAsFunctionUnderNS(): void
     {
         $this->functions->createConfig('config', ['BOOTSTRAP' => ['namespace' => 'rikmeijer\\Bootstrap\\f']]);
-        $f = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4 = 0) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
+        $f = $this->createFunction('test/resourceFunc', '<?php return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f');
 
         generate();
         $this->activateBootstrap();
-        $args = [
-            'foo',
-            null,
-            $this->createMock(ReflectionFunction::class)
-        ];
-        self::assertEquals('Yes!', $f(...$args)->status);
+
+        self::assertEquals('Yes!', $f()->status);
     }
 
     public function testWhen_CalledDeeper_Expect_FunctionAvailableAsFunctionUnderNS(): void
     {
-        $f = $this->createFunction('test/test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, string $arg4 = "") {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $f = $this->createFunction('test/test/resourceFunc', '<?php return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
-        $args = [
-            'foo',
-            null,
-            $this->createMock(ReflectionFunction::class)
-        ];
-        self::assertEquals('Yes!', $f(...$args)->status);
+
+        self::assertEquals('Yes!', $f()->status);
     }
 
     public function testWhen_ResourcesAreGenerated_Expect_ResourcesAvailableAsFunctions(): void
@@ -530,9 +522,9 @@ final class BootstrapTest extends TestCase
             'BOOTSTRAP'              => ['namespace' => 'rikmeijer\\Bootstrap\\f3'],
             'test/test/resourceFunc' => ['status' => 'Yesss!']
         ]);
-        $f0 = $this->createFunction('resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
-        $f1 = $this->createFunction('test/resourceFunc', '<?php return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);', 'rikmeijer\\Bootstrap\\f3');
+        $f0 = $this->createFunction('resourceFunc', '<?php return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
+        $f1 = $this->createFunction('test/resourceFunc', '<?php return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};', 'rikmeijer\\Bootstrap\\f3');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);', 'rikmeijer\\Bootstrap\\f3');
 
         generate();
 
@@ -540,40 +532,27 @@ final class BootstrapTest extends TestCase
 
         $this->activateBootstrap();
 
-        $args = [
-            'foo',
-            null,
-            $this->createMock(ReflectionFunction::class),
-            3.14
-        ];
-
-        self::assertEquals('Yes!', $f0(...$args)->status);
-        self::assertEquals('Yes!', $f1(...$args)->status);
-        self::assertEquals('Yesss!', $f2(...$args)->status);
+        self::assertEquals('Yes!', $f0()->status);
+        self::assertEquals('Yes!', $f1()->status);
+        self::assertEquals('Yesss!', $f2()->status);
     }
 
     public function testWhen_ResourcesAreGeneratedWithinNS_Expect_ResourceConfigsAvailableAsFunctions(): void
     {
         $this->functions->createConfig('config', ['test/test/resourceFunc' => ['status' => 'Yesss!']]);
-        $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-        $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return static function($arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
-        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration, $arg1, ?string $arg2, \ReflectionFunction $arg3, int|float $arg4) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);');
+        $f0 = $this->createFunction('resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2; return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $f1 = $this->createFunction('test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test; return static function() {' . PHP_EOL . '   return (object)["status" => "Yes!"];' . PHP_EOL . '};');
+        $f2 = $this->createFunction('test/test/resourceFunc', '<?php namespace rikmeijer\\Bootstrap\\f2\\test\\test; return \\' . $this->getBootstrapFQFN('configure') . '(static function(array $configuration) {' . PHP_EOL . '   return (object)["status" => $configuration["status"]];' . PHP_EOL . '}, ["status" => ' . self::TYPES_NS . '\\string("No!")]);');
 
         generate();
 
         self::assertFileExists($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
         $this->activateBootstrap();
-        $args = [
-            'foo',
-            null,
-            $this->createMock(ReflectionFunction::class),
-            3.14
-        ];
 
-        self::assertEquals('Yes!', $f0(...$args)->status);
-        self::assertEquals('Yes!', $f1(...$args)->status);
-        self::assertEquals('Yesss!', $f2(...$args)->status);
+        self::assertEquals('Yes!', $f0()->status);
+        self::assertEquals('Yes!', $f1()->status);
+        self::assertEquals('Yesss!', $f2()->status);
     }
 
     public function testResourceWhenExtraArgumentsArePassed_Expect_ParametersAvailable(): void
