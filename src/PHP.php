@@ -139,8 +139,8 @@ class PHP
         }
 
         if ($collector(T_FUNCTION) !== null) {
+            $collector("("); // find opening parenthesis
             $parametersTokens = $collector(")");
-            $parametersTokens(1); // shift (
             $parametersTokens(-1); // pop )
             $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
 
