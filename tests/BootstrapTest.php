@@ -403,6 +403,56 @@ final class BootstrapTest extends TestCase
         self::assertNull($f());
     }
 
+
+    /**
+     * @dataProvider returnTypeHintProvider
+     */
+    public function test_When_FunctionGeneratedWithReturnType_Expected_ReturnTypeCopiedToWrapperFunction(string $returnType, mixed $returnValue): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php return static function() : ' . $returnType . ' {' . PHP_EOL . '   return ' . var_export($returnValue, true) . ';' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+
+        self::assertEquals($returnValue, $f());
+    }
+
+
+    public function returnTypeHintProvider(): array
+    {
+        return [
+
+            "boolean" => [
+                "bool",
+                true
+            ],
+            "integer" => [
+                'int',
+                1
+            ],
+            "float"   => [
+                'float',
+                3.14
+            ],
+            "string"  => [
+                'string',
+                "sometext"
+            ],
+            "array"   => [
+                'array',
+                [
+                    "some",
+                    "value"
+                ]
+            ],
+            'class'   => [
+                '\\' . Test::class,
+                new Test()
+            ]
+        ];
+    }
+
     /**
      * @dataProvider typeHintProvider
      */
@@ -445,7 +495,7 @@ final class BootstrapTest extends TestCase
         generate();
         $this->activateBootstrap();
 
-        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+        self::assertEquals('Yes!', $f(new Test()));
     }
 
     public function test_When_FunctionGenerated_Expected_TypeHintingWithNullableUseCopiedToWrapperFunction(): void
@@ -456,7 +506,7 @@ final class BootstrapTest extends TestCase
         $this->activateBootstrap();
 
         self::assertEquals('Yes!', $f(null));
-        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+        self::assertEquals('Yes!', $f(new Test()));
     }
 
     public function test_When_FunctionGenerated_Expected_TypeHintingWithUseAndUseFunctionCopiedToWrapperFunction(): void
@@ -466,7 +516,7 @@ final class BootstrapTest extends TestCase
         generate();
         $this->activateBootstrap();
 
-        self::assertEquals('Yes!', $f($this->createMock(Test::class)));
+        self::assertEquals('Yes!', $f(new Test()));
     }
 
     public function test_When_FunctionGeneratedWithMultipleArguments_Expected_TypeHintingCopiedToWrapperFunction(): void

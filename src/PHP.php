@@ -197,7 +197,7 @@ class PHP
             $functionParameterTokens = $collector('{');
             $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
             if ($returnCollector(":") !== null) {
-                $context['returnType'] = trim(($returnCollector(T_NAME_QUALIFIED, T_CALLABLE, T_STRING)(-1))[1]);
+                $context['returnType'] = trim(($returnCollector(T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_CALLABLE, T_STRING, T_ARRAY)(-1))[1]);
             }
         }
         return $context;
