@@ -194,15 +194,10 @@ class PHP
                 $context['parameters'][] = $parameter;
             }
 
-            $functionParameterTokens = self::makeCollectorFromTokens($collector('{'))(":", null);
-            if ($functionParameterTokens !== null) {
-                $functionParameterTokens(-1); // pop :
-
-                $context['returnType'] = '';
-                while ($functionSignatureToken = $functionParameterTokens(1)) {
-                    $context['returnType'] .= $functionSignatureToken[1];
-                }
-                $context['returnType'] = trim($context['returnType']);
+            $functionParameterTokens = $collector('{');
+            $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
+            if ($returnCollector(":") !== null) {
+                $context['returnType'] = trim(($returnCollector(T_NAME_QUALIFIED, T_CALLABLE, T_STRING)(-1))[1]);
             }
         }
         return $context;

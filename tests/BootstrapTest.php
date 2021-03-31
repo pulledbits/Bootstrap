@@ -418,9 +418,19 @@ final class BootstrapTest extends TestCase
         }
     }
 
-    public function test_When_AWhiteSpaceSeparatesFunctionAndParenthesins_Expect_PHPToSkipWhiteSpace(): void
+    public function test_When_AWhiteSpaceSeparatesFunctionAndParenthesis_Expect_PHPToSkipWhiteSpace(): void
     {
         $f = $this->createFunction('resourceFunc', '<?php return static function (string $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f("foo"));
+    }
+
+    public function test_When_UseStatementBeforeReturnType_Expect_PHPToSkipUseStatement(): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php return $self = static function(string $arg1) use (&$self) : string {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
