@@ -334,6 +334,17 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $f()->status);
     }
 
+    public function test_With_NoCallbackReturnedWithFunctionWithoutNamespace_Expect_ResourceFileToBeIncludedFromResourcesFileExposingGlobalFunctionsUnderGlobalNS(): void
+    {
+        $f = $this->createFunction('resource', '<?php ' . PHP_EOL . 'function resource() : string {' . PHP_EOL . 'return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertTrue(function_exists($f), $f);
+        self::assertEquals('Yes!', $f());
+    }
+
     private function createFunction(string $resourceName, string $content, string $configNS = null): string
     {
         $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);
@@ -341,18 +352,24 @@ final class BootstrapTest extends TestCase
             is_dir($directory) || mkdir($directory, 0777, true);
         }
         $file = $this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName . '.php';
+        if (preg_match($pattern = '/return (\s*(\$[a-zA-Z_]\w+\s*= ?|(\\\\?(\w+\\\\)*)configure\())?(\s*static )?\s*function/', $content, $matches, PREG_OFFSET_CAPTURE) === 1) {
+            $context = PHP::deductContextFromString(substr($content, 0, $matches[0][1] + 6) . ';');
+        } else {
+            $context = PHP::deductContextFromString($content);
+            if (array_key_exists('namespace', $context) === false) {
+                $context['namespace'] = '';
+            }
+        }
 
-        $context = PHP::deductContextFromString(substr($content, 0, strpos($content, 'return') + 6) . ';');
-        $fqfn = '\\';
         $functionIdentifier = str_replace('/', '\\', $resourceName);
         if ($configNS !== null) {
-            $fqfn .= $configNS . '\\' . $functionIdentifier;
+            $fqfn = '\\' . $configNS . '\\' . $functionIdentifier;
         } elseif (array_key_exists('namespace', $context) === false) {
-            $fqfn .= $this->getBootstrapFQFN($this->getTestName()) . '\\' . $functionIdentifier;
+            $fqfn = '\\' . $this->getBootstrapFQFN($this->getTestName()) . '\\' . $functionIdentifier;
         } elseif (($lastSlashPosition = strrpos($functionIdentifier, '\\')) !== false) {
-            $fqfn .= $context['namespace'] . '\\' . substr($functionIdentifier, $lastSlashPosition + 1);
+            $fqfn = $context['namespace'] . '\\' . substr($functionIdentifier, $lastSlashPosition + 1);
         } else {
-            $fqfn .= $context['namespace'] . '\\' . $functionIdentifier;
+            $fqfn = $context['namespace'] . '\\' . $functionIdentifier;
         }
 
         $code = str_replace(['${FQFN}', '${FN}'], [$fqfn, substr($fqfn, 1)], $content);

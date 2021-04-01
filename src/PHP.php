@@ -24,15 +24,19 @@ class PHP
     public static function extractGlobalFunctionFromFile(string $resourcesPath, string $resourcePath, string $functionName, string $genericNS, string $openFunction): string
     {
         $resourceFilePath = $resourcePath . '/' . $functionName . '.php';
+        $body = '\\' . $openFunction . '(' . var_export($resourceFilePath, true) . ')';
+        $namespace = $genericNS;
 
         $f = new GlobalFunction($functionName);
         $context = self::deductContextFromString(file_get_contents($resourcesPath . DIRECTORY_SEPARATOR . $resourceFilePath));
-
-        $namespace = $genericNS;
-        if (array_key_exists('namespace', $context)) {
-            $namespace = $context['namespace'];
+        if (count($context) === 0) {
+            return 'namespace ' . $namespace . '{ ' . $body . ';}';
         }
-        $qualifiedFunctionName = $namespace . '\\' . $functionName;
+
+        if (array_key_exists('namespace', $context)) {
+            $namespace = substr($context['namespace'], 1);
+        }
+        $fullyQualifiedFunctionName = $namespace . '\\' . $functionName;
 
         if (array_key_exists('parameters', $context)) {
             F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
@@ -59,17 +63,16 @@ class PHP
 
 
         $returnType = $f->getReturnType();
-        if ($qualifiedFunctionName === 'rikmeijer\Bootstrap\resource\open') {
+        if ($fullyQualifiedFunctionName === '\rikmeijer\Bootstrap\resource\open') {
             $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
         } else {
-            $body = '\\' . $openFunction . '(' . var_export($resourceFilePath, true) . ')';
             if ($returnType === null || $returnType !== 'void') {
                 $body = 'return ' . $body;
             }
         }
         $f->setBody($body . '(...func_get_args());');
 
-        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $qualifiedFunctionName . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
+        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $fullyQualifiedFunctionName . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
     }
 
     public static function deductContextFromString(string $code): array
@@ -85,7 +88,7 @@ class PHP
 
         $tokensUpToReturnCollector = self::makeCollectorFromTokens($tokensUptoReturn);
         if ($tokensUpToReturnCollector(T_NAMESPACE) !== null) {
-            $context['namespace'] = ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
+            $context['namespace'] = '\\' . ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
         }
 
         $uses = [];
