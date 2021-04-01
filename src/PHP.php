@@ -187,29 +187,22 @@ class PHP
         return F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
     }
 
-    private static function matchToken(mixed $id, string|array $token): bool
+    public static function createMatcher(string|array $token): callable
     {
-        if (is_string($id)) {
-            if ($token === $id) {
-                return true;
-            }
-        } elseif (is_int($id)) {
-            if ($token[0] === $id) {
-                return true;
-            }
-        }
-        return false;
+        return F\partial_right(match (is_string($token)) {
+            true => static fn(int|string $id, string $token) => $token === $id,
+            false => static fn(int|string $id, array $token) => $token[0] === $id
+        }, $token);
     }
 
     public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
     {
         $buffer = [];
+        $matchableIds = array_filter($ids, static fn(null|int|string $id) => $id !== null);
         while ($token = $tokens(1)) {
             $buffer[] = $token;
-            foreach ($ids as $id) {
-                if (self::matchToken($id, $token)) {
-                    return self::tokenize($buffer);
-                }
+            if (F\contains(F\map($matchableIds, static fn($id) => self::createMatcher($token)($id)), true)) {
+                return self::tokenize($buffer);
             }
         }
         if (count($buffer) === 0) {
