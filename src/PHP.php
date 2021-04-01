@@ -3,53 +3,11 @@
 
 namespace rikmeijer\Bootstrap;
 
-
 use Functional as F;
 use Nette\PhpGenerator\GlobalFunction;
-use ReflectionNamedType;
-use ReflectionParameter;
-use ReflectionUnionType;
 
 class PHP
 {
-    public static function function (string $fqfn, string $parameters, string $returnType, string $code): string
-    {
-        return PHP_EOL . '    if (function_exists(' . self::export($fqfn) . ') === false) {' . PHP_EOL . '        function ' . F\last(explode('\\', $fqfn)) . ' (' . $parameters . ') ' . ($returnType !== '' ? ': ' . $returnType : '') . '{' . PHP_EOL . '            ' . $code . PHP_EOL . '        }' . PHP_EOL . '    }' . PHP_EOL;
-    }
-
-    public static function export(mixed $variable): string
-    {
-        if ($variable instanceof ReflectionParameter) {
-            $type = $variable->getType();
-            if ($type === null) {
-                return '$' . $variable->getName();
-            }
-            $typeHint = '';
-            if ($type->allowsNull()) {
-                $typeHint .= '?';
-            }
-            $typeHint .= self::export($type);
-
-            if ($variable->isDefaultValueAvailable() === false) {
-                $default = '';
-            } elseif ($variable->isDefaultValueConstant()) {
-                $default = ' = ' . $variable->getDefaultValueConstantName();
-            } else {
-                $default = ' = ' . self::export($variable->getDefaultValue());
-            }
-
-            return $typeHint . ' $' . $variable->getName() . $default;
-        }
-
-        if ($variable instanceof ReflectionUnionType) {
-            return implode('|', array_map([self::class, 'export'], $variable->getTypes()));
-        }
-
-        if ($variable instanceof ReflectionNamedType) {
-            return ($variable->isBuiltin() === false ? '\\' : '') . $variable->getName();
-        }
-        return var_export($variable, true);
-    }
 
     private static function tokenize(array $tokens): callable
     {
@@ -104,7 +62,7 @@ class PHP
         if ($qualifiedFunctionName === 'rikmeijer\Bootstrap\resource\open') {
             $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
         } else {
-            $body = '\\' . $openFunction . '(' . self::export($resourceFilePath) . ')';
+            $body = '\\' . $openFunction . '(' . var_export($resourceFilePath, true) . ')';
             if ($returnType === null || $returnType !== 'void') {
                 $body = 'return ' . $body;
             }
