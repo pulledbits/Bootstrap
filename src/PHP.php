@@ -63,15 +63,18 @@ class PHP
         };
     }
 
-    public static function extractGlobalFunctionFromFile(string $resourcePath, string $genericNS, string $openFunction): string
+    public static function extractGlobalFunctionFromFile(string $resourcesPath, string $resourcePath, string $functionName, string $genericNS, string $openFunction): string
     {
-        $f = new GlobalFunction(basename($resourcePath, '.php'));
-        $context = self::deductContextFromString(file_get_contents($resourcePath));
+        $resourceFilePath = $resourcePath . '/' . $functionName . '.php';
+
+        $f = new GlobalFunction($functionName);
+        $context = self::deductContextFromString(file_get_contents($resourcesPath . DIRECTORY_SEPARATOR . $resourceFilePath));
 
         $namespace = $genericNS;
         if (array_key_exists('namespace', $context)) {
             $namespace = $context['namespace'];
         }
+        $qualifiedFunctionName = $namespace . '\\' . $functionName;
 
         if (array_key_exists('parameters', $context)) {
             F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
@@ -98,17 +101,17 @@ class PHP
 
 
         $returnType = $f->getReturnType();
-        if ($namespace . '\\' . $f->getName() === 'rikmeijer\Bootstrap\resource\open') {
+        if ($qualifiedFunctionName === 'rikmeijer\Bootstrap\resource\open') {
             $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
         } else {
-            $body = '\\' . $openFunction . '(' . self::export($resourcePath) . ')';
+            $body = '\\' . $openFunction . '(' . self::export($resourceFilePath) . ')';
             if ($returnType === null || $returnType !== 'void') {
                 $body = 'return ' . $body;
             }
         }
         $f->setBody($body . '(...func_get_args());');
 
-        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $f->getName() . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
+        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $qualifiedFunctionName . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
     }
 
     public static function deductContextFromString(string $code): array

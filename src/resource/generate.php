@@ -9,17 +9,17 @@ return static function (callable $resourceOpenerArgs, callable $fopen, string $r
     $temp = fopen('php://memory', 'wb+');
     $writer = partial_left('\\fwrite', $temp);
     $writer('<?php declare(strict_types=1);' . PHP_EOL);
-    $generator = partial_left(static function (callable $resourceOpener, callable $writer, string $resourcesPath, string $namespace) use (&$generator): void {
+    $generator = partial_left(static function (callable $resourceOpener, callable $writer, string $path, string $namespace) use (&$generator, $resourcesPath): void {
         $openFunction = $resourceOpener($writer, $namespace);
-        foreach (glob($resourcesPath . DIRECTORY_SEPARATOR . '*') as $resourceFilePath) {
+        foreach (glob($resourcesPath . DIRECTORY_SEPARATOR . $path . DIRECTORY_SEPARATOR . '*') as $resourceFilePath) {
             if (is_dir($resourceFilePath)) {
-                $generator($resourceFilePath, trim($namespace . '\\' . basename($resourceFilePath), '\\'));
+                $generator($path . DIRECTORY_SEPARATOR . basename($resourceFilePath), trim($namespace . '\\' . basename($resourceFilePath), '\\'));
             } elseif (str_ends_with($resourceFilePath, '.php')) {
-                $writer(PHP::extractGlobalFunctionFromFile($resourceFilePath, $namespace, $openFunction));
+                $writer(PHP::extractGlobalFunctionFromFile($resourcesPath, $path, basename($resourceFilePath, '.php'), $namespace, $openFunction));
             }
         }
     }, opener($resourceOpenerArgs), $writer);
-    $generator($resourcesPath, $namespace);
+    $generator('', $namespace);
 
     fseek($temp, 0);
 
