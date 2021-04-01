@@ -345,6 +345,18 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $f());
     }
 
+    public function test_With_NoCallbackReturnedWithFunctionWithNamespace_Expect_ResourceFileToBeIncludedFromResourcesFileExposingGlobalFunctionsUnderSpecifiedNS(): void
+    {
+        $f = $this->createFunction('resource', '<?php namespace some\happy\space;' . PHP_EOL . 'function resource() : string {' . PHP_EOL . 'return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertStringStartsWith('\some\happy\space', $f);
+        self::assertTrue(function_exists($f), $f);
+        self::assertEquals('Yes!', $f());
+    }
+
     private function createFunction(string $resourceName, string $content, string $configNS = null): string
     {
         $directory = dirname($this->getConfigurationRoot() . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . $resourceName);

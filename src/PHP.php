@@ -1,6 +1,5 @@
 <?php declare(strict_types=1);
 
-
 namespace rikmeijer\Bootstrap;
 
 use Functional as F;
@@ -23,6 +22,7 @@ class PHP
 
     public static function extractGlobalFunctionFromFile(string $resourcesPath, string $resourcePath, string $functionName, string $genericNS, string $openFunction): string
     {
+
         $resourceFilePath = $resourcePath . '/' . $functionName . '.php';
         $body = '\\' . $openFunction . '(' . var_export($resourceFilePath, true) . ')';
         $namespace = $genericNS;
@@ -30,13 +30,14 @@ class PHP
         $f = new GlobalFunction($functionName);
         $context = self::deductContextFromString(file_get_contents($resourcesPath . DIRECTORY_SEPARATOR . $resourceFilePath));
         if (count($context) === 0) {
-            return 'namespace ' . $namespace . '{ ' . $body . ';}';
+            return 'namespace ' . $namespace . ' { ' . $body . ';}';
         }
-
         if (array_key_exists('namespace', $context)) {
             $namespace = substr($context['namespace'], 1);
+            if (count($context) === 1) {
+                return 'namespace ' . $namespace . ' { ' . $body . ';}';
+            }
         }
-        $fullyQualifiedFunctionName = $namespace . '\\' . $functionName;
 
         if (array_key_exists('parameters', $context)) {
             F\each($context['parameters'], static function (array $contextParameter, int $index) use ($f) {
@@ -62,6 +63,7 @@ class PHP
         }
 
 
+        $fullyQualifiedFunctionName = $namespace . '\\' . $functionName;
         $returnType = $f->getReturnType();
         if ($fullyQualifiedFunctionName === '\rikmeijer\Bootstrap\resource\open') {
             $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
@@ -102,76 +104,78 @@ class PHP
             $uses[$asIdentifier] = $useIdentifier;
         }
 
-        if ($collector(T_FUNCTION) !== null) {
-            $collector("("); // find opening parenthesis
-            $parametersTokens = $collector(")");
-            $parametersTokens(-1); // pop )
-            $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
+        if ($collector(T_FUNCTION) === null) {
+            return $context;
+        }
 
-            $context['parameters'] = [];
-            while ($parameterTokens = $parametersTokensCollector(",", null)) {
-                $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
-                $bufferedTokens = [];
-                while ($parameterToken = $parameterTokens(1)) {
-                    if ($parameterToken === '?') {
-                        $parameter['nullable'] = true;
-                        continue;
-                    }
+        $collector("("); // find opening parenthesis
+        $parametersTokens = $collector(")");
+        $parametersTokens(-1); // pop )
+        $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
 
-                    if (is_array($parameterToken) && $parameterToken[0] === T_WHITESPACE) {
-                        continue;
-                    }
-                    if (is_array($parameterToken) && $parameterToken[0] === T_ELLIPSIS) {
-                        $parameter['variadic'] = true;
-                        continue;
-                    }
-
-                    if (is_array($parameterToken) && $parameterToken[0] === T_VARIABLE) {
-                        $parameter['name'] = $parameterToken[1];
-                        $types = [];
-                        foreach ($bufferedTokens as $bufferedToken) {
-                            if ($bufferedToken === '|') {
-                                continue;
-                            }
-
-                            if (array_key_exists($bufferedToken[1], $uses)) {
-                                $types[] = '\\' . $uses[$bufferedToken[1]];
-                            } else {
-                                $types[] = $bufferedToken[1];
-                            }
-                        }
-                        if (count($types) > 0) {
-                            $parameter['type'] = implode('|', $types);
-                        }
-                        break;
-                    }
-                    $bufferedTokens[] = $parameterToken;
+        $context['parameters'] = [];
+        while ($parameterTokens = $parametersTokensCollector(",", null)) {
+            $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
+            $bufferedTokens = [];
+            while ($parameterToken = $parameterTokens(1)) {
+                if ($parameterToken === '?') {
+                    $parameter['nullable'] = true;
+                    continue;
                 }
 
-                while ($parameterToken = $parameterTokens(1)) {
-                    if (is_array($parameterToken)) {
-                        $code = 'return ' . $parameterToken[1] . ';';
-                        $parameter['default'] = eval($code);
-                    }
+                if (is_array($parameterToken) && $parameterToken[0] === T_WHITESPACE) {
+                    continue;
+                }
+                if (is_array($parameterToken) && $parameterToken[0] === T_ELLIPSIS) {
+                    $parameter['variadic'] = true;
+                    continue;
                 }
 
-                $context['parameters'][] = $parameter;
+                if (is_array($parameterToken) && $parameterToken[0] === T_VARIABLE) {
+                    $parameter['name'] = $parameterToken[1];
+                    $types = [];
+                    foreach ($bufferedTokens as $bufferedToken) {
+                        if ($bufferedToken === '|') {
+                            continue;
+                        }
+
+                        if (array_key_exists($bufferedToken[1], $uses)) {
+                            $types[] = '\\' . $uses[$bufferedToken[1]];
+                        } else {
+                            $types[] = $bufferedToken[1];
+                        }
+                    }
+                    if (count($types) > 0) {
+                        $parameter['type'] = implode('|', $types);
+                    }
+                    break;
+                }
+                $bufferedTokens[] = $parameterToken;
             }
 
-            $functionParameterTokens = $collector('{');
-            $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
-            if ($returnCollector(":") !== null) {
-                $returnValueTokens = $returnCollector("{");
-                $returnValueTokens(-1); // pop {
-                $context['returnType'] = '';
-                while (($token = $returnValueTokens(-1)) !== null) {
-                    if (is_string($token)) {
-                        $context['returnType'] = $token . $context['returnType'];
-                    } elseif ($token[0] === T_WHITESPACE) {
-                        continue;
-                    } else {
-                        $context['returnType'] = trim($token[1]) . $context['returnType'];
-                    }
+            while ($parameterToken = $parameterTokens(1)) {
+                if (is_array($parameterToken)) {
+                    $code = 'return ' . $parameterToken[1] . ';';
+                    $parameter['default'] = eval($code);
+                }
+            }
+
+            $context['parameters'][] = $parameter;
+        }
+
+        $functionParameterTokens = $collector('{');
+        $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
+        if ($returnCollector(":") !== null) {
+            $returnValueTokens = $returnCollector("{");
+            $returnValueTokens(-1); // pop {
+            $context['returnType'] = '';
+            while (($token = $returnValueTokens(-1)) !== null) {
+                if (is_string($token)) {
+                    $context['returnType'] = $token . $context['returnType'];
+                } elseif ($token[0] === T_WHITESPACE) {
+                    continue;
+                } else {
+                    $context['returnType'] = trim($token[1]) . $context['returnType'];
                 }
             }
         }
@@ -183,20 +187,28 @@ class PHP
         return F\partial_left([__CLASS__, 'tokenCollector'], $tokens);
     }
 
+    private static function matchToken(mixed $id, string|array $token): bool
+    {
+        if (is_string($id)) {
+            if ($token === $id) {
+                return true;
+            }
+        } elseif (is_int($id)) {
+            if ($token[0] === $id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
     {
         $buffer = [];
         while ($token = $tokens(1)) {
             $buffer[] = $token;
             foreach ($ids as $id) {
-                if (is_string($id)) {
-                    if ($token === $id) {
-                        return self::tokenize($buffer);
-                    }
-                } elseif (is_int($id)) {
-                    if ($token[0] === $id) {
-                        return self::tokenize($buffer);
-                    }
+                if (self::matchToken($id, $token)) {
+                    return self::tokenize($buffer);
                 }
             }
         }
