@@ -197,7 +197,18 @@ class PHP
             $functionParameterTokens = $collector('{');
             $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
             if ($returnCollector(":") !== null) {
-                $context['returnType'] = trim(($returnCollector(T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_CALLABLE, T_STRING, T_ARRAY)(-1))[1]);
+                $returnValueTokens = $returnCollector("{");
+                $returnValueTokens(-1); // pop {
+                $context['returnType'] = '';
+                while (($token = $returnValueTokens(-1)) !== null) {
+                    if (is_string($token)) {
+                        $context['returnType'] = $token . $context['returnType'];
+                    } elseif ($token[0] === T_WHITESPACE) {
+                        continue;
+                    } else {
+                        $context['returnType'] = trim($token[1]) . $context['returnType'];
+                    }
+                }
             }
         }
         return $context;

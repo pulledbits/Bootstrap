@@ -458,13 +458,13 @@ final class BootstrapTest extends TestCase
      */
     public function test_When_FunctionGenerated_Expected_TypeHintingCopiedToWrapperFunction(string $typeHint, mixed ...$arguments): void
     {
-        $f = $this->createFunction('resourceFunc', '<?php return static function(' . $typeHint . ' $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+        $f = $this->createFunction('resourceFunc', '<?php return static function(' . $typeHint . ' $arg1) ' . ($typeHint !== '' ? ':' . $typeHint : '') . ' {' . PHP_EOL . '   return $arg1;' . PHP_EOL . '};');
 
         generate();
         $this->activateBootstrap();
 
         foreach ($arguments as $argument) {
-            self::assertEquals('Yes!', $f($argument));
+            self::assertEquals($argument, $f($argument));
         }
     }
 
