@@ -550,6 +550,17 @@ final class BootstrapTest extends TestCase
         self::assertEquals('Yes!', $f(new Test()));
     }
 
+
+    public function test_When_FunctionGenerated_Expected_TypeHintingCollidingWithUseFunctionCopiedCorrectToWrapperFunction(): void
+    {
+        $f = $this->createFunction('resourceFunc', '<?php namespace some\\name\\space3; use function rikmeijer\Bootstrap\types\string; return static function(string $arg1) {' . PHP_EOL . '   return "Yes!";' . PHP_EOL . '};');
+
+        generate();
+        $this->activateBootstrap();
+
+        self::assertEquals('Yes!', $f('test'));
+    }
+
     public function test_When_FunctionGeneratedWithMultipleArguments_Expected_TypeHintingCopiedToWrapperFunction(): void
     {
         $namespace = '';

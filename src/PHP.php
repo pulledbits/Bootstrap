@@ -85,6 +85,12 @@ class PHP
             }
 
             $useIdentifier = ($useTokens(-1))[1];
+            while ($useToken = $useTokens(-1)) {
+                if (is_array($useToken) && $useToken[0] === T_FUNCTION) {
+                    return;
+                }
+            }
+
             $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
             $context['uses'][$asIdentifier] = $useIdentifier;
         });
