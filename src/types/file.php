@@ -2,7 +2,8 @@
 
 namespace rikmeijer\Bootstrap\types;
 
-return static function (?string $defaultValue = null): callable {
+function file(?string $defaultValue = null): callable
+{
     $pathValidator = path($defaultValue);
     return static function (mixed $value, callable $error) use ($pathValidator) {
         $path = $pathValidator($value, $error);
@@ -10,4 +11,4 @@ return static function (?string $defaultValue = null): callable {
             return fopen($path, $mode);
         };
     };
-};
+}

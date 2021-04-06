@@ -1,83 +1,64 @@
 <?php declare(strict_types=1);
-namespace rikmeijer\Bootstrap\types{
-
-    use function rikmeijer\Bootstrap\resource\open;
+namespace rikmeijer\Bootstrap\types {
 
     function __open(string $resourcePath)
     {
         $resourcePath = str_replace("\\", chr(47), $resourcePath);
-        return open(substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $resourcePath, false);
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\arr") === false) {
-        function arr(?array $defaultValue = null): callable
-        {
-            return __open('/arr.php')(...func_get_args());
+        static $closures = [];
+        if (!isset($closures[$resourcePath])) {
+            $closures[$resourcePath] = require substr(__FILE__, 0, -4) . DIRECTORY_SEPARATOR . $resourcePath;
         }
-
+        return $closures[$resourcePath];
     }
-}namespace rikmeijer\Bootstrap\types { 
+}
+
+namespace rikmeijer\Bootstrap\types {
+
+    __open('/arr.php');
+}
+
+namespace rikmeijer\Bootstrap\types {
+
     if (function_exists("rikmeijer\Bootstrap\types\binary") === false) {
-        function binary(array $defaultCommand = null): callable
+        function binary(array $defaultCommand = null)
         {
             return __open('/binary.php')(...func_get_args());
         }
 
     }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\boolean") === false) {
-        function boolean(?bool $defaultValue = null): callable
-        {
-            return __open('/boolean.php')(...func_get_args());
-        }
+}
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\file") === false) {
-        function file(?string $defaultValue = null): callable
-        {
-            return __open('/file.php')(...func_get_args());
-        }
+namespace rikmeijer\Bootstrap\types {
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\float") === false) {
-        function float(?float $defaultValue = null): callable
-        {
-            return __open('/float.php')(...func_get_args());
-        }
+    __open('/boolean.php');
+}
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\integer") === false) {
-        function integer(?int $defaultValue = null): callable
-        {
-            return __open('/integer.php')(...func_get_args());
-        }
+namespace rikmeijer\Bootstrap\types {
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\mixed") === false) {
-        function mixed(mixed $defaultValue): callable
-        {
-            return __open('/mixed.php')(...func_get_args());
-        }
+    __open('/file.php');
+}
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\path") === false) {
-        function path(?string $defaultValue = null): callable
-        {
-            return __open('/path.php')(...func_get_args());
-        }
+namespace rikmeijer\Bootstrap\types {
 
-    }
-}namespace rikmeijer\Bootstrap\types { 
-    if (function_exists("rikmeijer\Bootstrap\types\string") === false) {
-        function string(?string $defaultValue = null): callable
-        {
-            return __open('/string.php')(...func_get_args());
-        }
+    __open('/float.php');
+}
 
-    }
+namespace rikmeijer\Bootstrap\types {
+
+    __open('/integer.php');
+}
+
+namespace rikmeijer\Bootstrap\types {
+
+    __open('/mixed.php');
+}
+
+namespace rikmeijer\Bootstrap\types {
+
+    __open('/path.php');
+}
+
+namespace rikmeijer\Bootstrap\types {
+
+    __open('/string.php');
 }

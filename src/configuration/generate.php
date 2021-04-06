@@ -4,7 +4,8 @@ namespace rikmeijer\Bootstrap\configuration;
 
 use function Functional\partial_left;
 
-return static function (string $from, string $namespace, bool $cached): void {
+function generate(string $from, string $namespace): void
+{
     $fopen = partial_left('\\fopen', $from . '.php');
-    \rikmeijer\Bootstrap\resource\generate($cached, $fopen, $from, $namespace);
-};
+    \rikmeijer\Bootstrap\resource\generate($fopen, $from, $namespace);
+}

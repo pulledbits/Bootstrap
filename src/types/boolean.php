@@ -2,6 +2,7 @@
 
 namespace rikmeijer\Bootstrap\types;
 
-return static function (?bool $defaultValue = null): callable {
+function boolean(?bool $defaultValue = null): callable
+{
     return mixed($defaultValue);
-};
+}

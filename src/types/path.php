@@ -5,7 +5,8 @@ namespace rikmeijer\Bootstrap\types;
 use Webmozart\PathUtil\Path;
 use function Functional\partial_left;
 
-return static function (?string $defaultValue = null): callable {
+function path(?string $defaultValue = null): callable
+{
     return partial_left(static function (?string $defaultValue, mixed $value, callable $error) {
         if ($value === null) {
             $value = $defaultValue ?? $error('is not set and has no default value');
@@ -18,4 +19,4 @@ return static function (?string $defaultValue = null): callable {
         }
         return $value;
     }, $defaultValue);
-};
+}

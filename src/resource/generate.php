@@ -5,7 +5,8 @@ namespace rikmeijer\Bootstrap\resource;
 use rikmeijer\Bootstrap\PHP;
 use function Functional\partial_left;
 
-return static function (bool $cached, callable $fopen, string $resourcesPath, string $namespace): void {
+function generate(callable $fopen, string $resourcesPath, string $namespace): void
+{
     $temp = fopen('php://memory', 'wb+');
     $writer = partial_left('\\fwrite', $temp);
     $writer('<?php declare(strict_types=1);' . PHP_EOL);
@@ -18,7 +19,7 @@ return static function (bool $cached, callable $fopen, string $resourcesPath, st
                 $writer(PHP::extractGlobalFunctionFromFile($resourcesPath, $path, basename($resourceFilePath, '.php'), $namespace, $openFunction));
             }
         }
-    }, opener($cached), $writer);
+    }, opener(), $writer);
     $generator('', $namespace);
 
     fseek($temp, 0);
@@ -29,4 +30,4 @@ return static function (bool $cached, callable $fopen, string $resourcesPath, st
     }
     fclose($temp);
     fclose($fp);
-};
+}

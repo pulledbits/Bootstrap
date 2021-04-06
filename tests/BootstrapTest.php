@@ -6,13 +6,15 @@ namespace rikmeijer\Bootstrap\tests;
 use ArgumentCountError;
 use Closure;
 use PHPUnit\Framework\TestCase;
-use ReflectionFunction;
 use rikmeijer\Bootstrap\PHP;
+use TestNoNS;
 use function fread;
 use function fwrite;
 use function rikmeijer\Bootstrap\configuration\validate;
 use function rikmeijer\Bootstrap\configure;
 use function rikmeijer\Bootstrap\generate;
+
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'TestNoNS.php';
 
 final class BootstrapTest extends TestCase
 {
@@ -580,13 +582,13 @@ final class BootstrapTest extends TestCase
                 'foo'
             ],
             'class'                => [
-                '\ReflectionFunction',
-                $this->createMock(ReflectionFunction::class)
+                '\TestNoNS',
+                new TestNoNS()
             ],
             'class_nullable'       => [
-                '?\ReflectionFunction',
+                '?\TestNoNS',
                 null,
-                $this->createMock(ReflectionFunction::class)
+                new TestNoNS()
             ]
         ];
         $primitives = [

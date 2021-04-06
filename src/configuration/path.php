@@ -2,7 +2,8 @@
 
 namespace rikmeijer\Bootstrap\configuration;
 
-return static function (): string {
+function path(): string
+{
     $configurationPath = getenv('BOOTSTRAP_CONFIGURATION_PATH');
     if (is_string($configurationPath) === false) {
         $configurationPath = getcwd();
@@ -11,4 +12,4 @@ return static function (): string {
         trigger_error('Configuration path invalid: no config.php found', E_USER_ERROR);
     }
     return $configurationPath;
-};
+}

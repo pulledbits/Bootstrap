@@ -29,14 +29,11 @@ class PHP
 
         $f = new GlobalFunction($functionName);
         $context = self::deductContextFromString(file_get_contents($resourcesPath . DIRECTORY_SEPARATOR . $resourceFilePath));
-        if (count($context) === 0) {
-            return 'namespace ' . $namespace . ' { ' . $body . ';}';
-        }
         if (array_key_exists('namespace', $context)) {
             $namespace = substr($context['namespace'], 1);
-            if (count($context) === 1) {
-                return 'namespace ' . $namespace . ' { ' . $body . ';}';
-            }
+        }
+        if (array_key_exists('functions', $context)) {
+            return 'namespace ' . $namespace . ' { ' . PHP_EOL . $body . ';}';
         }
 
         if (array_key_exists('parameters', $context)) {
@@ -62,59 +59,41 @@ class PHP
             $f->setReturnType($context['returnType']);
         }
 
-
-        $fullyQualifiedFunctionName = $namespace . '\\' . $functionName;
         $returnType = $f->getReturnType();
-        if ($fullyQualifiedFunctionName === '\rikmeijer\Bootstrap\resource\open') {
-            $body = 'static $closure; if (!isset($closure)) $closure = (include __DIR__ . DIRECTORY_SEPARATOR . "resource/open.php"); return $closure';
-        } else {
-            if ($returnType === null || $returnType !== 'void') {
-                $body = 'return ' . $body;
-            }
+        if ($returnType === null || $returnType !== 'void') {
+            $body = 'return ' . $body;
         }
         $f->setBody($body . '(...func_get_args());');
 
-        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $fullyQualifiedFunctionName . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
+        return 'namespace ' . $namespace . ' { ' . PHP_EOL . '    if (function_exists("' . $namespace . '\\' . $functionName . '") === false) {' . PHP_EOL . '    ' . $f->__toString() . PHP_EOL . '    }' . PHP_EOL . '}';
     }
 
-    public static function deductContextFromString(string $code): array
+    public static function interpretNamespace(callable $collector, array $context): array
     {
-        $collector = self::makeCollectorFromTokens(self::tokenize(token_get_all($code, TOKEN_PARSE)));
+        $collector([T_NAME_QUALIFIED], static function (callable $namespaceTokens) use (&$context): void {
+            $context['namespace'] = '\\' . ($namespaceTokens(2))[1];
+        });
+        return $context;
+    }
 
-        $tokensUptoReturn = $collector(T_RETURN);
-        if ($tokensUptoReturn === null) {
-            return [];
-        }
-
-        $context = [];
-
-        $tokensUpToReturnCollector = self::makeCollectorFromTokens($tokensUptoReturn);
-        if ($tokensUpToReturnCollector(T_NAMESPACE) !== null) {
-            $context['namespace'] = '\\' . ($tokensUpToReturnCollector(T_NAME_QUALIFIED)(2))[1];
-        }
-
-        $uses = [];
-        while ($tokensUpToReturnCollector(T_USE) !== null) {
-            $useTokens = $tokensUpToReturnCollector(T_NAME_QUALIFIED);
-            if ($useTokens === null) {
-                continue;
+    public static function interpretUse(callable $collector, array $context): array
+    {
+        $collector([';'], static function (callable $useTokens) use (&$context): void {
+            $useTokens(-1); //pop ;
+            if (array_key_exists('uses', $context) === false) {
+                $context['uses'] = [];
             }
+
             $useIdentifier = ($useTokens(-1))[1];
             $asIdentifier = substr($useIdentifier, strrpos($useIdentifier, '\\') + 1);
-            $uses[$asIdentifier] = $useIdentifier;
-        }
+            $context['uses'][$asIdentifier] = $useIdentifier;
+        });
+        return $context;
+    }
 
-        if ($collector(T_FUNCTION) === null) {
-            return $context;
-        }
-
-        $collector("("); // find opening parenthesis
-        $parametersTokens = $collector(")");
-        $parametersTokens(-1); // pop )
-        $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
-
-        $context['parameters'] = [];
-        while ($parameterTokens = $parametersTokensCollector(",", null)) {
+    public static function interpretParameter(array &$context): callable
+    {
+        return static function (callable $parameterTokens) use (&$context): void {
             $parameter = ['nullable' => false, 'variadic' => false, 'type' => null, 'name' => null];
             $bufferedTokens = [];
             while ($parameterToken = $parameterTokens(1)) {
@@ -138,9 +117,10 @@ class PHP
                         if ($bufferedToken === '|') {
                             continue;
                         }
-
-                        if (array_key_exists($bufferedToken[1], $uses)) {
-                            $types[] = '\\' . $uses[$bufferedToken[1]];
+                        if (array_key_exists('uses', $context) === false) {
+                            $types[] = $bufferedToken[1];
+                        } elseif (array_key_exists($bufferedToken[1], $context['uses'])) {
+                            $types[] = '\\' . $context['uses'][$bufferedToken[1]];
                         } else {
                             $types[] = $bufferedToken[1];
                         }
@@ -159,14 +139,25 @@ class PHP
                     $parameter['default'] = eval($code);
                 }
             }
-
             $context['parameters'][] = $parameter;
-        }
+        };
+    }
 
-        $functionParameterTokens = $collector('{');
-        $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
-        if ($returnCollector(":") !== null) {
-            $returnValueTokens = $returnCollector("{");
+    public static function interpretParameters(callable $collector, array &$context): void
+    {  // find opening parenthesis
+        $collector([")"], static function (callable $parametersTokens) use (&$context): void {
+            $context['parameters'] = [];
+            $parametersTokens(-1); // pop )
+            $parametersTokensCollector = self::makeCollectorFromTokens($parametersTokens);
+            do {
+                $found = $parametersTokensCollector([",", null], self::interpretParameter($context));
+            } while ($found);
+        });
+    }
+
+    public static function interpretReturnType(callable $collector, array $context): array
+    {
+        $collector(["{"], static function (callable $returnValueTokens) use (&$context) {
             $returnValueTokens(-1); // pop {
             $context['returnType'] = '';
             while (($token = $returnValueTokens(-1)) !== null) {
@@ -178,6 +169,74 @@ class PHP
                     $context['returnType'] = trim($token[1]) . $context['returnType'];
                 }
             }
+        });
+        return $context;
+    }
+
+    public static function interpretFunction(callable $collector, array $context): array
+    {
+        $collector(["("], static function (callable $functionNameTokens) use ($collector, &$context) {
+            self::makeCollectorFromTokens($functionNameTokens)([
+                T_STRING,
+                T_NAME_QUALIFIED
+            ], static function (callable $tokens) use (&$context) {
+                $context['identifier'] = $tokens(-1)[1];
+            });
+            self::interpretParameters($collector, $context);
+        });
+
+        $collector(['{'], static function (callable $functionParameterTokens) use (&$context) {
+            $returnCollector = self::makeCollectorFromTokens($functionParameterTokens);
+            $returnCollector([":"], fn() => self::interpretReturnType($returnCollector, $context));
+        });
+
+        $nest = 0;
+        do {
+            $collector(['}'], static function (callable $functionBodyTokens) use (&$nest) {
+                $nest--;
+                while ($functionBodyToken = $functionBodyTokens(1)) {
+                    if ($functionBodyToken === '{') {
+                        $nest++;
+                    }
+                }
+            });
+        } while ($nest > 0);
+
+        return $context;
+    }
+
+    public static function interpretReturn(callable $collector, array $context): array
+    {
+        $collector([T_FUNCTION], static function () use ($collector, &$context): void {
+            $context = self::interpretFunction($collector, $context);
+        });
+        return $context;
+    }
+
+    public static function deductContextFromString(string $code): array
+    {
+        $tokens = self::tokenize(token_get_all($code, TOKEN_PARSE));
+        $collector = self::makeCollectorFromTokens($tokens);
+        $nextToken = F\partial_left($tokens, 1);
+        $context = [];
+        while ($parameterToken = $nextToken()) {
+            $context = match (is_string($parameterToken) ? $parameterToken : $parameterToken[0]) {
+                T_NAMESPACE => self::interpretNamespace($collector, $context),
+                T_USE => self::interpretUse($collector, $context),
+                T_RETURN => self::interpretReturn($collector, $context),
+                T_FUNCTION => (static function (callable $collector, array $context) {
+                    $functionContext = self::interpretFunction($collector, ['uses' => $context['uses'] ?? []]);
+                    if (array_key_exists('identifier', $functionContext)) {
+                        if (array_key_exists('functions', $context) === false) {
+                            $context['functions'] = [];
+                        }
+                        unset($functionContext['uses']);
+                        $context['functions'][$functionContext['identifier']] = $functionContext;
+                    }
+                    return $context;
+                })($collector, $context),
+                default => $context
+            };
         }
         return $context;
     }
@@ -195,22 +254,24 @@ class PHP
         }, $token);
     }
 
-    public static function tokenCollector(callable $tokens, mixed ...$ids): ?callable
+    public static function tokenCollector(callable $tokens, array $ids, callable $onMatch): bool
     {
         $buffer = [];
         $matchableIds = array_filter($ids, static fn(null|int|string $id) => $id !== null);
         while ($token = $tokens(1)) {
             $buffer[] = $token;
             if (F\contains(F\map($matchableIds, static fn($id) => self::createMatcher($token)($id)), true)) {
-                return self::tokenize($buffer);
+                $onMatch(self::tokenize($buffer));
+                return true;
             }
         }
         if (count($buffer) === 0) {
-            return null;
+            return false;
         }
         if (F\contains($ids, null)) {
-            return self::tokenize($buffer);
+            $onMatch(self::tokenize($buffer));
+            return true;
         }
-        return null;
+        return false;
     }
 }
